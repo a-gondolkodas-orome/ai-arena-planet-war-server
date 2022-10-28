@@ -1,0 +1,14 @@
+
+{
+    "compilerOptions": {
+      "module": "ESNext",
+      "noImplicitAny": true,
+      "preserveConstEnums": true,
+      "removeComments": true,
+      "outDir": "./dist",
+      "rootDir": "./",
+      "sourceMap": true,
+      "target": "ESNext",
+      "moduleResolution": "node"
+    }
+  }
