@@ -1,9 +1,6 @@
 import { ChildProcess, spawn } from 'node:child_process';
 import { Queue } from 'queue-typescript';
 
-
-
-
 export enum ErrorCode {
     Success,
     NonZeroExitCode,
@@ -115,7 +112,7 @@ export class Bot {
 }
 
 export class BotPool {
-    private bots: Bot[]
+    public bots: Bot[]
     public constructor(file_names:string[]){
         this.bots = file_names.map(name => new Bot(name)); 
     }
@@ -127,23 +124,4 @@ export class BotPool {
     public askAll():Promise<Data[]>{
         return Promise.all(this.bots.map(b => b.ask()));
     }
-}
-
-async function test(){
-
-    let bp : BotPool = new BotPool(['./a.out', './b.py']);
-    let k = await bp.askAll();
-    console.log('answer:', k);
-    await bp.sendAll("Kristof")
-    for(let i = 0; i < 10; i++){
-        let a = await bp.askAll();
-        console.log(i,'anwser:', a);
-    }
-} 
-
-try {
-test();
-    
-} catch (error) {
-console.log(error)    
 }

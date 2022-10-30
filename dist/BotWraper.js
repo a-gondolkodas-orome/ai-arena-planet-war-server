@@ -104,7 +104,4 @@ export class BotPool {
         return Promise.all(this.bots.map(b => b.ask()));
     }
 }
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-//# sourceMappingURL=app.js.map
+//# sourceMappingURL=BotWraper.js.map
