@@ -1,4 +1,5 @@
 import { ChildProcess, spawn } from 'node:child_process';
+import { stringify } from 'node:querystring';
 import { Queue } from 'queue-typescript';
 
 export enum ErrorCode {
@@ -69,9 +70,9 @@ export class Bot {
 
         return new Promise<void>(
             (resolve, reject) => {
-                this.process.stdin.write(message + '\n', (err)=>{
+                this.process.stdin.write(message + '\n', (err) => {
                     if(!!err){
-                        console.log("error",err)
+                        console.log("error writing", err)
                         reject(err);
                     }else{
                         resolve();
@@ -82,7 +83,7 @@ export class Bot {
         );
     }
     
-    public ask() :Promise<Data> {
+    public ask(number_of_lines:number = 1) :Promise<Data> {
         this.awailable_time += Bot.plus_time_per_round;
         if(this.error_code !== ErrorCode.Success){
             return new Promise(resolve => resolve({id: this.id, data: null}));
@@ -91,13 +92,14 @@ export class Bot {
         return new Promise(async resolve => {
             const delay = (ms:number) => new Promise(resolve => setTimeout(resolve, ms));
 
-            while(this.std_out.length === 0 && this.awailable_time > 0 && this.error_code === ErrorCode.Success){
+            while(this.std_out.length < number_of_lines && this.awailable_time > 0 && this.error_code === ErrorCode.Success){
                 this.awailable_time -= 30;
                 await delay(30);
             }
 
-            if(this.std_out.length > 0){
-                resolve({id: this.id, data: this.std_out.dequeue()});
+            if(this.std_out.length >= number_of_lines){
+                const data:string = Array.from({length: number_of_lines}, () => this.std_out.dequeue()).join('\n');
+                resolve({id: this.id, data: data});
             }else{ // TLE
                 this.error_code = ErrorCode.TLE;
                 resolve({id: this.id, data: null});
@@ -121,7 +123,7 @@ export class BotPool {
         return Promise.all(this.bots.map(b => b.send(message)));
     }
 
-    public askAll():Promise<Data[]>{
-        return Promise.all(this.bots.map(b => b.ask()));
+    public askAll(number_of_lines: number = 1):Promise<Data[]>{
+        return Promise.all(this.bots.map(b => b.ask(number_of_lines)));
     }
 }

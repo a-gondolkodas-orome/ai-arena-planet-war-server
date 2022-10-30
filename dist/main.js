@@ -11,10 +11,8 @@ import { BotPool } from "./BotWraper";
 function test() {
     return __awaiter(this, void 0, void 0, function* () {
         let bp = new BotPool(['./a.out', './a.out']);
-        yield bp.sendAll('Ne\n m');
-        let a = yield bp.askAll();
-        console.log('anwser:', a);
-        a = yield bp.askAll();
+        yield bp.sendAll('Expample Name');
+        let a = yield bp.askAll(2);
         console.log('anwser:', a);
         a = yield bp.askAll();
         console.log('anwser:', a);

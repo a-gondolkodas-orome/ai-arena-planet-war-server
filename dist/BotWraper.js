@@ -66,19 +66,21 @@ export class Bot {
             this.process.stdin.emit('drain');
         });
     }
-    ask() {
+    ask(number_of_lines = 1) {
         this.awailable_time += Bot.plus_time_per_round;
         if (this.error_code !== ErrorCode.Success) {
             return new Promise(resolve => resolve({ id: this.id, data: null }));
         }
         return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
             const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            while (this.std_out.length === 0 && this.awailable_time > 0 && this.error_code === ErrorCode.Success) {
+            while (this.std_out.length < number_of_lines && this.awailable_time > 0 && this.error_code === ErrorCode.Success) {
                 this.awailable_time -= 30;
                 yield delay(30);
             }
-            if (this.std_out.length > 0) {
-                resolve({ id: this.id, data: this.std_out.dequeue() });
+            console.log("waited for: " + number_of_lines + " lines, has: " + this.std_out.length, this.awailable_time, this.error_code);
+            if (this.std_out.length >= number_of_lines) {
+                const data = Array.from({ length: number_of_lines }, () => this.std_out.dequeue()).join('\n');
+                resolve({ id: this.id, data: data });
             }
             else {
                 this.error_code = ErrorCode.TLE;
@@ -100,8 +102,8 @@ export class BotPool {
     sendAll(message) {
         return Promise.all(this.bots.map(b => b.send(message)));
     }
-    askAll() {
-        return Promise.all(this.bots.map(b => b.ask()));
+    askAll(number_of_lines = 1) {
+        return Promise.all(this.bots.map(b => b.ask(number_of_lines)));
     }
 }
 //# sourceMappingURL=BotWraper.js.map
