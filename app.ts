@@ -7,7 +7,7 @@ import { Queue } from 'queue-typescript';
 // TODO(Kristof): implement enum for error codes
 const time_inc:number = 1000;
 
-class Bot {
+export class Bot {
     id: number;
 
     error_code: number;
@@ -99,7 +99,7 @@ class Bot {
 
 }
 
-class BotPool {
+export class BotPool {
     bots: Bot[]
 
     constructor(file_names:string[]){
@@ -121,19 +121,3 @@ function delay(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function test(){
-
-    let bp : BotPool = new BotPool(['./a.out', './a.out']);
-    bp.sendAll('Nem');
-    let k = bp.askAll();
-    console.log('answer:', k);
-    let a = await bp.askAll();
-    console.log('anwser:', a);
-} 
-
-try {
-test();
-    
-} catch (error) {
-console.log(error)    
-}

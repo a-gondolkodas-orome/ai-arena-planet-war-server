@@ -2,19 +2,22 @@
   "name": "botwrapper",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/app.js",
+  "main": "./dist/main.js",
   "scripts": {
     "start": "npm run build && npm run run",
     "build": "npx tsc",
-    "run": "node dist/app.js"
+    "run": "node --es-module-specifier-resolution=node dist/main.js"
   },
   "keywords": [],
   "author": "",
   "type": "module",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^18.11.3",
+    "@types/node": "^18.11.7",
     "queue-typescript": "^1.0.1",
     "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "childprocess": "^2.0.2"
   }
 }
