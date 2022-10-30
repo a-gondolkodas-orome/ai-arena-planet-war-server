@@ -1,7 +1,17 @@
 import { spawn } from 'node:child_process';
 import { Queue } from 'queue-typescript';
-const time_inc = 1000;
-class Bot {
+export var ErrorCode;
+(function (ErrorCode) {
+    ErrorCode[ErrorCode["Success"] = 0] = "Success";
+    ErrorCode[ErrorCode["NonZeroExitCode"] = 1] = "NonZeroExitCode";
+    ErrorCode[ErrorCode["TLE"] = 2] = "TLE";
+    ErrorCode[ErrorCode["UnexpectedExitOfCode"] = 3] = "UnexpectedExitOfCode";
+})(ErrorCode || (ErrorCode = {}));
+export class Data {
+    id;
+    data;
+}
+export class Bot {
     id;
     error_code;
     active;
@@ -10,24 +20,29 @@ class Bot {
     std_err;
     awailable_time;
     static next_bot_id = 0;
+    static starting_awailable_time = 1000;
+    static plus_time_per_round = 1000;
     constructor(command) {
         this.id = Bot.next_bot_id++;
         this.active = true;
-        this.error_code = 0;
+        this.error_code = ErrorCode.Success;
         this.std_out = new Queue();
         this.std_err = new Queue();
-        this.awailable_time = 1000;
+        this.awailable_time = Bot.starting_awailable_time;
         this.process = spawn(command, [], { shell: true });
         this.process.on('error', (err) => {
-            this.error_code = 1;
+            this.error_code = ErrorCode.UnexpectedExitOfCode;
         });
         this.process.stdout.on('data', this.processData.bind(this));
         this.process.stderr.on('data', (data) => this.std_err.enqueue(data));
         this.process.on('close', (code) => {
-            console.log(`child process close all stdio with code ${code}`);
+            this.active = false;
         });
         this.process.on('exit', (code) => {
-            console.log(`child process exited with code ${code}`);
+            if (code !== 0) {
+                this.error_code = ErrorCode.NonZeroExitCode;
+            }
+            this.active = false;
         });
     }
     processData(data) {
@@ -39,9 +54,12 @@ class Bot {
             .forEach((s) => this.std_out.enqueue(s));
     }
     send(message) {
+        if (!this.active)
+            return new Promise(() => { });
         return new Promise((resolve, reject) => {
             this.process.stdin.write(message + '\n', (err) => {
                 if (!!err) {
+                    console.log("error", err);
                     reject(err);
                 }
                 else {
@@ -52,23 +70,22 @@ class Bot {
         });
     }
     ask() {
-        return new Promise((resolve, reject) => {
-            this.process.stdout.pause();
-            if (!this.active || this.error_code !== 0) {
-                this.process.stdout.resume();
-                resolve([this.id, null]);
+        this.awailable_time += Bot.plus_time_per_round;
+        if (this.error_code !== ErrorCode.Success) {
+            return new Promise(resolve => resolve({ id: this.id, data: null }));
+        }
+        return new Promise(async (resolve) => {
+            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            while (this.std_out.length === 0 && this.awailable_time > 0 && this.error_code === ErrorCode.Success) {
+                this.awailable_time -= 30;
+                await delay(30);
             }
-            else if (this.std_out.length > 0) {
-                this.process.stdout.resume();
-                resolve([this.id, this.std_out.dequeue()]);
+            if (this.std_out.length > 0) {
+                resolve({ id: this.id, data: this.std_out.dequeue() });
             }
             else {
-                const self = this;
-                this.process.stdout.prependOnceListener('data', (data) => {
-                    self.processData(data);
-                    resolve([self.id, self.std_out.dequeue()]);
-                });
-                this.process.stdout.resume();
+                this.error_code = ErrorCode.TLE;
+                resolve({ id: this.id, data: null });
             }
         });
     }
@@ -76,7 +93,7 @@ class Bot {
         console.log(this.std_out.toArray());
     }
 }
-class BotPool {
+export class BotPool {
     bots;
     constructor(file_names) {
         this.bots = file_names.map(name => new Bot(name));
@@ -88,16 +105,15 @@ class BotPool {
         return Promise.all(this.bots.map(b => b.ask()));
     }
 }
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 async function test() {
-    let bp = new BotPool(['./a.out', './a.out']);
-    await bp.sendAll('Nem');
+    let bp = new BotPool(['./a.out', './b.py']);
     let k = await bp.askAll();
     console.log('answer:', k);
-    let a = await bp.askAll();
-    console.log('anwser:', a);
+    await bp.sendAll("Kristof");
+    for (let i = 0; i < 10; i++) {
+        let a = await bp.askAll();
+        console.log(i, 'anwser:', a);
+    }
 }
 try {
     test();
