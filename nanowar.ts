@@ -54,7 +54,7 @@ let mapSize = [100, 100];
 let initState: GameState = {
     players: [{ id: 1, name: "1" }, { id: 2, name: "2" }],
     planets: [
-        { id: 0, position: [0, 0], efficiency: 1 },
+        { id: 0, position: [0, 0], efficiency: 3 },
         { id: 1, position: [10, 10], efficiency: 1 },
         { id: 2, position: [0, 10], efficiency: 1 },
         { id: 3, position: [10, 0], efficiency: 1 },
@@ -65,8 +65,8 @@ let initState: GameState = {
         planets: [
             { id: 0, player: {id: 0, startingTick: 0}, population: 100 },
             { id: 1, player: {id: 1, startingTick: 0}, population: 100 },
-            { id: 2, player: null, population: 100 },
-            { id: 3, player: null, population: 100 },
+            { id: 2, player: null, population: 10 },
+            { id: 3, player: null, population: 10 },
         ],
         troops: [],
     }
@@ -89,16 +89,30 @@ async function makeMatch(state: GameState, bots: BotPool) {
         workingBots[i].send(startingPosToString(state, i));
     }
     let isThereActiveBot = true;
-    while (isThereActiveBot && state.tick.id < 1000) {
-
+    while (isThereActiveBot && state.tick.id < 100) {
+        console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3]);
         let userSteps : UserStep[] = []
         for (let i = 0; i < workingBots.length; i++) {
+            //console.log(tickToString(state, i));
             await workingBots[i].send(tickToString(state, i));
-            let answer = await workingBots[i].ask();
-            let validatedStep = validateStep(state, i, answer.data);
+
+            // TODO: it's game specific
+            let firstAnswer = await workingBots[i].ask();
+            let numberOfMove = parseInt(firstAnswer.data);
+            //console.log(firstAnswer.data);
+            let answer = await workingBots[i].ask(numberOfMove);
+            if (numberOfMove !== 0) {
+                console.log("send:", answer)
+            }
+            //console.log(i, answer.data)
+
+            let validatedStep = validateStep(state, i, numberOfMove, answer.data);
+
             if (!validatedStep.hasOwnProperty("error")) {
                 userSteps.push(validatedStep as UserStep); // TODO: implement error handling: throw an error and use try-catch
             } else {
+                let tmp = validatedStep as {error: string};
+                console.log("ERRORR!!!", tmp.error);
                 userSteps.push([]);
             }
         }
@@ -116,7 +130,9 @@ async function makeMatch(state: GameState, bots: BotPool) {
             }
         }
         if (!atLeastTwoPlayer) isThereActiveBot = false;
+        state.tick.id++;
     }
+    console.log("ENDED");
 }
 
 async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
@@ -166,7 +182,7 @@ function tickToString(state: GameState, player: PlayerID): string {
     }
     tick += state.tick.troops.length.toString() + "\n";
     for (let troop of state.tick.troops) {
-        tick += troop.who + " " + troop.from.toString() + " " + troop.to.toString() + " " + troop.size.toString() + troop.endTick + "\n";
+        tick += troop.who + " " + troop.from.toString() + " " + troop.to.toString() + " " + troop.size.toString() + " " + troop.endTick + "\n";
     }
     return tick;
 }
@@ -175,14 +191,14 @@ function tickToString(state: GameState, player: PlayerID): string {
 let qwe = startingPosToString(initState, 1);
 console.log(qwe)*/
 
-function validateStep(state: GameState, playerID: PlayerID, input: string): UserStep | { error: string } {
+function validateStep(state: GameState, playerID: PlayerID, numberOfTroops: number, input: string): UserStep | { error: string } {
     try {
-        let lines = input.concat("\n");
-        let numberOfTroops = parseInt(lines[0]);
+        if (numberOfTroops === 0) return [];
+        let lines = input.split("\n");
         let troops: UserStep = [];
         let fromTo = new Set<string>();
         for (let i = 0; i < numberOfTroops; i++) {
-            let [ from, to, size ] = lines[1].split(" ").map(x => parseInt(x));
+            let [ from, to, size ] = lines[i].split(" ").map(x => parseInt(x));
             if (state.tick.planets.length < from || state.tick.planets.length < to) {
                 return { error: "Invalid planet id" };  // TODO: do not punish so strongly. Just ignore one line if it is invalid, not the whole step.
             }
@@ -205,6 +221,7 @@ function validateStep(state: GameState, playerID: PlayerID, input: string): User
         return troops;
     }
     catch(e) {
+        console.log(e);
         return {error: "Invalid input"}; // TODO: better error message
     }
 }
@@ -225,26 +242,22 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     }
 
     // Process troops that are arriving to their planets, preparing for fight
-    let planetWaitingList: {who: PlayerID, size: number}[][] = []; // TODO: use dictionary instead of array
+    let planetWaitingList: {who: PlayerID, size: number}[][] = Array.from(Array(state.planets.length), () => []); // TODO: use dictionary instead of array
     for (let i = 0; i < state.tick.troops.length; i++) {
         if (state.tick.troops[i].endTick === state.tick.id) {
             let planet = state.tick.troops[i].to;
             let user = { who: state.tick.troops[i].who, size: state.tick.troops[i].size };
             // Add planets to
-            if (planetWaitingList[planet] === undefined) {
-                planetWaitingList[planet] = [user];
-            } else {
-                planetWaitingList[planet].push(user);
-            }
+            planetWaitingList[planet].push(user);
+            console.log("Arrived:", planetWaitingList);
             state.tick.troops.splice(i, 1); // Removing troop from list
             i--;
         }
     }
-
     // FIGHT!
-    for (let i = 0; i < planetWaitingList.length; i++) { // i = planetID
-        let planet = planetWaitingList[i];
+    for (let i=0; i < planetWaitingList.length; i++) { // i = planetID
         // No one is coming to this planet
+        let planet = planetWaitingList[i];
         if (planet.length === 0) {
             continue;
         }
@@ -262,10 +275,10 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
         let max : {who: number | null, size: number} = {who: null, size: 0};
         let max2 : {who: number | null, size: number} = {who: null, size: 0};
         for (let i = 0; i < state.players.length; i++) {
-            if(sizes[i].size > max.size){
+            if(sizes[i] > max.size){
                 max2 = max;
                 max = {who: i, size: sizes[i]};
-            } else if (sizes[i].size > max2.size) {
+            } else if (sizes[i] > max2.size) {
                 max2 = {who: i, size: sizes[i]};
             }
         }

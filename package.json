@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build && npm run run",
     "build": "npx tsc",
-    "run": "node --es-module-specifier-resolution=node dist/main.js"
+    "run": "node --es-module-specifier-resolution=node dist/nanowar.js"
   },
   "browser":{
     "child_process": false
