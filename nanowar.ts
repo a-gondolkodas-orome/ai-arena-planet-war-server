@@ -1,122 +1,13 @@
 import { Bot, BotPool } from "./BotWraper";
-
-type PlayerID = number;
-
-type Player = {
-    id: PlayerID,
-    name: string,
-}
-
-type PlanetID = number;
-
-type Planet = {
-    id: PlanetID;
-    x: number;
-    y: number;
-    size: number; // just for visualizer
-    efficiency: number;
-}
-
-type Tick = {
-    id: number;
-    planets: {
-        id: PlanetID;
-        player: {id: PlayerID, startingTick: number} | null;
-        population: number; // It can also have population without player
-    }[];
-    troops: {
-        id: number;
-        from: PlanetID,
-        to: PlanetID,
-        player: PlayerID,
-        size: number,
-        endTick: number,
-    }[];
-//    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
-};
-
-type TickVisualizer = {
-    planets: {
-        id: PlanetID;
-        player: PlayerID | null;
-        population: number; // It can also have population without player
-    }[];
-    troops: {
-        id: number,
-        from: PlanetID,
-        to: PlanetID,
-        player: PlayerID,
-        size: number,
-        progress: number,
-    }[];
-//    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
-};
-
-
-// hány troop
-// from, to, size
-
-type GameState = {
-    players: Player[],
-    board: {width: number, height: number},
-    planets: Planet[],
-    planetsDistances: number[][],
-    tick: Tick,
-};
-
-type GameStateVis = {
-    init: {
-        players: Player[],
-        board: {width: number, height: number},
-        planets: {
-            id: PlanetID;
-            x: number;
-            y: number;
-            size: number;
-            player: PlayerID | null;
-        }[],
-    },
-    ticks: TickVisualizer[],
-}
-
-type UserStep = {
-    playerID: PlayerID,
-    from: PlanetID,
-    to: PlanetID,
-    size: number,
-}[];
-
-let initState: GameState = {
-    players: [{ id: 1, name: "1" }, { id: 2, name: "2" }],
-    board: {
-        width: 200,
-        height: 200,
-    },
-    planets: [
-        { id: 0, x: 50, y: 50, efficiency: 3, size: 10 },
-        { id: 1, x: 150, y: 150, efficiency: 1, size: 10 },
-        { id: 2, x: 50, y: 150, efficiency: 1, size: 10 },
-        { id: 3, x: 150, y: 50, efficiency: 1, size: 10 },
-    ],
-    planetsDistances: [[0, 14, 10, 10], [14, 0, 10, 10], [10, 10, 0, 14], [10, 10, 14, 0]],
-    tick: {
-        id: 0,
-        planets: [
-            { id: 0, player: {id: 0, startingTick: 0}, population: 10 },
-            { id: 1, player: {id: 1, startingTick: 0}, population: 10 },
-            { id: 2, player: null, population: 1 },
-            { id: 3, player: null, population: 1 },
-        ],
-        troops: [],
-    }
-}
+import { PlayerID, Tick, TickVisualizer, GameState, GameStateVis, UserStep } from "./types";
+import { initState2 as initState } from "./initStates";
+import { bots2 as bots } from "./initStates";
 
 /*interface Bot {
     playerID: PlayerID;
     sendStep: (dataToSend: string) => string,
 }*/
 
-let bots = new BotPool(['./bots/idle_bot.out', "./bots/win_bot.out"]);
 let troopIDCounter = 0;
 let tickLog : TickVisualizer[] = [];
 
@@ -134,7 +25,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
     let isThereAliveBot = true;
     let tickLog : Tick[] = [];
     tickToVisualizer(state); // Save for visualizer
-    while (isThereAliveBot && state.tick.id < 100) {
+    while (isThereAliveBot && state.tick.id < 300) {
         console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3]);
         let userSteps : UserStep[] = []
         for (let i = 0; i < workingBots.length; i++) {
@@ -143,6 +34,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
 
             // TODO: it's game specific
             let firstAnswer = await workingBots[i].ask();
+            //console.log("firstAnswer:", firstAnswer);
             let numberOfMove = parseInt(firstAnswer.data);
             //console.log(firstAnswer.data);
             let answer = await workingBots[i].ask(numberOfMove);
@@ -358,10 +250,6 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
 }
 
 function tickToVisualizer(state: GameState): void {
-    if(state.tick.troops.length > 0){
-        console.log("Number: ", state.tick.troops[0].endTick, state.tick.id, state.planetsDistances[state.tick.troops[0].from][state.tick.troops[0].to])
-        console.log(1 - (state.tick.troops[0].endTick - state.tick.id) / (state.planetsDistances[state.tick.troops[0].from][state.tick.troops[0].to]))
-    }
     tickLog.push(
         {
             planets: state.tick.planets.map(planet => {
