@@ -13,6 +13,7 @@ type Planet = {
     id: PlanetID;
     x: number;
     y: number;
+    size: number; // just for visualizer
     efficiency: number;
 }
 
@@ -24,20 +25,40 @@ type Tick = {
         population: number; // It can also have population without player
     }[];
     troops: {
+        id: number;
         from: PlanetID,
         to: PlanetID,
-        who: PlayerID,
+        player: PlayerID,
         size: number,
         endTick: number,
     }[];
 //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
 };
 
+type TickVisualizer = {
+    planets: {
+        id: PlanetID;
+        player: PlayerID | null;
+        population: number; // It can also have population without player
+    }[];
+    troops: {
+        id: number,
+        from: PlanetID,
+        to: PlanetID,
+        player: PlayerID,
+        size: number,
+        progress: number,
+    }[];
+//    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
+};
+
+
 // hány troop
 // from, to, size
 
 type GameState = {
     players: Player[],
+    board: {width: number, height: number},
     planets: Planet[],
     planetsDistances: number[][],
     tick: Tick,
@@ -50,15 +71,17 @@ type UserStep = {
     size: number,
 }[];
 
-let mapSize = [100, 100];
-
 let initState: GameState = {
     players: [{ id: 1, name: "1" }, { id: 2, name: "2" }],
+    board: {
+        width: 20,
+        height: 20,
+    },
     planets: [
-        { id: 0, x: 0, y: 0, efficiency: 3 },
-        { id: 1, x: 10, y: 10, efficiency: 1 },
-        { id: 2, x: 0, y: 10, efficiency: 1 },
-        { id: 3, x: 10, y: 0, efficiency: 1 },
+        { id: 0, x: 0, y: 0, efficiency: 3, size: 10 },
+        { id: 1, x: 10, y: 10, efficiency: 1, size: 10 },
+        { id: 2, x: 0, y: 10, efficiency: 1, size: 10 },
+        { id: 3, x: 10, y: 0, efficiency: 1, size: 10 },
     ],
     planetsDistances: [[0, 14, 10, 10], [14, 0, 10, 10], [10, 10, 0, 14], [10, 10, 14, 0]],
     tick: {
@@ -79,7 +102,11 @@ let initState: GameState = {
 }*/
 
 let bots = new BotPool(['./bots/idle_bot.out', "./bots/win_bot.out"]);
+let troopIDCounter = 0;
+let tickLog : TickVisualizer[] = [];
+
 makeMatch(initState, bots);
+
 
 // TODOS: bot.doStep(state)
 
@@ -89,8 +116,10 @@ async function makeMatch(state: GameState, bots: BotPool) {
         console.log("sending starting pos to bot " + i);
         workingBots[i].send(startingPosToString(state, i));
     }
-    let isThereActiveBot = true;
-    while (isThereActiveBot && state.tick.id < 100) {
+    let isThereAliveBot = true;
+    let tickLog : Tick[] = [];
+    tickLog.push(state.tick); // Save for visualizer
+    while (isThereAliveBot && state.tick.id < 100) {
         console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3]);
         let userSteps : UserStep[] = []
         for (let i = 0; i < workingBots.length; i++) {
@@ -130,8 +159,9 @@ async function makeMatch(state: GameState, bots: BotPool) {
                 }
             }
         }
-        if (!atLeastTwoPlayer) isThereActiveBot = false;
+        if (!atLeastTwoPlayer) isThereAliveBot = false;
         state.tick.id++;
+        tickLog.push(state.tick); // Save for visualizer
     }
     console.log("ENDED");
 }
@@ -183,7 +213,7 @@ function tickToString(state: GameState, player: PlayerID): string {
     }
     tick += state.tick.troops.length.toString() + "\n";
     for (let troop of state.tick.troops) {
-        tick += troop.who + " " + troop.from.toString() + " " + troop.to.toString() + " " + troop.size.toString() + " " + troop.endTick + "\n";
+        tick += troop.player + " " + troop.from.toString() + " " + troop.to.toString() + " " + troop.size.toString() + " " + troop.endTick + "\n";
     }
     return tick;
 }
@@ -213,7 +243,7 @@ function validateStep(state: GameState, playerID: PlayerID, numberOfTroops: numb
             if (state.tick.planets[from].population < size) {
                 return { error: "Invalid size! You don't have enough troops." };
             }
-            if (fromTo.has(from.toString() + "_" + to.toString())) {
+            if (fromTo.has(from.toString() + "_" + to.toString())) { // TODO: toString is probably slow
                 return { error: "Invalid step! You can't send troops from one planet to another more than once." };
             }
             fromTo.add(from.toString() + "_" + to.toString()); // Little bit ugly
@@ -233,9 +263,10 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
         for (let troop of step) {
             state.tick.planets[troop.from].population -= troop.size;
             state.tick.troops.push({
+                id: troopIDCounter++,
                 from: troop.from,
                 to: troop.to,
-                who: troop.playerID,
+                player: troop.playerID,
                 size: troop.size,
                 endTick: state.tick.id + state.planetsDistances[troop.from][troop.to],
             });
@@ -247,7 +278,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     for (let i = 0; i < state.tick.troops.length; i++) {
         if (state.tick.troops[i].endTick === state.tick.id) {
             let planet = state.tick.troops[i].to;
-            let user = { who: state.tick.troops[i].who, size: state.tick.troops[i].size };
+            let user = { who: state.tick.troops[i].player, size: state.tick.troops[i].size };
             // Add planets to
             planetWaitingList[planet].push(user);
             console.log("Arrived:", planetWaitingList);
