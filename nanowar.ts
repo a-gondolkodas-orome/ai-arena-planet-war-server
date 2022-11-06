@@ -202,10 +202,12 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
             continue;
         }
         // Preparing some variables
-        let sizes = new Array(state.players.length).fill(0); // TODO: use dictionary instead of array
+        let sizes = new Array(state.players.length+1).fill(0); // TODO: use dictionary instead of array
         for (let user of planet) {
             sizes[user.who] += user.size;
         }
+        // Add neutral planet population to the fight
+        sizes[state.players.length] = state.tick.planets[i].player === null ? 0 : state.tick.planets[i].population;
         // Planet owner is coming to this planet
         let planetOwner = state.tick.planets[i].player;
         if (planetOwner !== null) { // TODO: state.tick.planets[i].player === null
@@ -214,7 +216,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
         // Get the two biggest sizes
         let max : {who: number | null, size: number} = {who: null, size: 0};
         let max2 : {who: number | null, size: number} = {who: null, size: 0};
-        for (let i = 0; i < state.players.length; i++) {
+        for (let i = 0; i < state.players.length+1; i++) {
             if(sizes[i] > max.size){
                 max2 = max;
                 max = {who: i, size: sizes[i]};
@@ -225,11 +227,16 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
         // Determine the winner, update the planet
         if (max.size === max2.size){
             state.tick.planets[i].player = null;
+            state.tick.planets[i].population = 0;
         } else if (max.who !== null) {
             state.tick.planets[i].player = {id: max.who, startingTick: state.tick.id};
             state.tick.planets[i].population = max.size - max2.size;
-        } else {
-            throw new Error("Internal Error! Something went wrong with the fight.");
+        } else if (max.who === null) {
+            state.tick.planets[i].player = null;
+            if (max2.who === null || max2.size === 0) {
+                throw new Error("Internal Error! Something went wrong with the fight.");
+            }
+            state.tick.planets[i].population = max.size - max2.size;
         }
     }
 
