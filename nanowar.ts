@@ -11,7 +11,8 @@ type PlanetID = number;
 
 type Planet = {
     id: PlanetID;
-    position: [number, number];
+    x: number;
+    y: number;
     efficiency: number;
 }
 
@@ -54,10 +55,10 @@ let mapSize = [100, 100];
 let initState: GameState = {
     players: [{ id: 1, name: "1" }, { id: 2, name: "2" }],
     planets: [
-        { id: 0, position: [0, 0], efficiency: 3 },
-        { id: 1, position: [10, 10], efficiency: 1 },
-        { id: 2, position: [0, 10], efficiency: 1 },
-        { id: 3, position: [10, 0], efficiency: 1 },
+        { id: 0, x: 0, y: 0, efficiency: 3 },
+        { id: 1, x: 10, y: 10, efficiency: 1 },
+        { id: 2, x: 0, y: 10, efficiency: 1 },
+        { id: 3, x: 10, y: 0, efficiency: 1 },
     ],
     planetsDistances: [[0, 14, 10, 10], [14, 0, 10, 10], [10, 10, 0, 14], [10, 10, 14, 0]],
     tick: {
@@ -148,7 +149,7 @@ function startingPosToString(state: GameState, player: PlayerID): string {
     let numberOfPlanets = state.planets.length;
     let planets = numberOfPlanets.toString() + "\n";
     for (let i = 0; i < numberOfPlanets; i++) {
-        planets += state.planets[i].position[0].toString() + " " + state.planets[i].position[1].toString() + " " + state.planets[i].efficiency.toString() + "\n";
+        planets += state.planets[i].x.toString() + " " + state.planets[i].y.toString() + " " + state.planets[i].efficiency.toString() + "\n";
     }
 
     // Planet distances
