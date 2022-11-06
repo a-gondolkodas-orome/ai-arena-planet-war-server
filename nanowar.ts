@@ -64,6 +64,21 @@ type GameState = {
     tick: Tick,
 };
 
+type GameStateVis = {
+    init: {
+        players: Player[],
+        board: {width: number, height: number},
+        planets: {
+            id: PlanetID;
+            x: number;
+            y: number;
+            size: number;
+            player: PlayerID | null;
+        }[],
+    },
+    ticks: TickVisualizer[],
+}
+
 type UserStep = {
     playerID: PlayerID,
     from: PlanetID,
@@ -74,23 +89,23 @@ type UserStep = {
 let initState: GameState = {
     players: [{ id: 1, name: "1" }, { id: 2, name: "2" }],
     board: {
-        width: 20,
-        height: 20,
+        width: 200,
+        height: 200,
     },
     planets: [
-        { id: 0, x: 0, y: 0, efficiency: 3, size: 10 },
-        { id: 1, x: 10, y: 10, efficiency: 1, size: 10 },
-        { id: 2, x: 0, y: 10, efficiency: 1, size: 10 },
-        { id: 3, x: 10, y: 0, efficiency: 1, size: 10 },
+        { id: 0, x: 50, y: 50, efficiency: 3, size: 10 },
+        { id: 1, x: 150, y: 150, efficiency: 1, size: 10 },
+        { id: 2, x: 50, y: 150, efficiency: 1, size: 10 },
+        { id: 3, x: 150, y: 50, efficiency: 1, size: 10 },
     ],
     planetsDistances: [[0, 14, 10, 10], [14, 0, 10, 10], [10, 10, 0, 14], [10, 10, 14, 0]],
     tick: {
         id: 0,
         planets: [
-            { id: 0, player: {id: 0, startingTick: 0}, population: 100 },
-            { id: 1, player: {id: 1, startingTick: 0}, population: 100 },
-            { id: 2, player: null, population: 10 },
-            { id: 3, player: null, population: 10 },
+            { id: 0, player: {id: 0, startingTick: 0}, population: 10 },
+            { id: 1, player: {id: 1, startingTick: 0}, population: 10 },
+            { id: 2, player: null, population: 1 },
+            { id: 3, player: null, population: 1 },
         ],
         troops: [],
     }
@@ -118,7 +133,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
     }
     let isThereAliveBot = true;
     let tickLog : Tick[] = [];
-    tickLog.push(state.tick); // Save for visualizer
+    tickToVisualizer(state); // Save for visualizer
     while (isThereAliveBot && state.tick.id < 100) {
         console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3]);
         let userSteps : UserStep[] = []
@@ -161,9 +176,10 @@ async function makeMatch(state: GameState, bots: BotPool) {
         }
         if (!atLeastTwoPlayer) isThereAliveBot = false;
         state.tick.id++;
-        tickLog.push(state.tick); // Save for visualizer
+        tickToVisualizer(state); // Save for visualizer
     }
     console.log("ENDED");
+    stateToVisualizer(state);
 }
 
 async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
@@ -339,4 +355,60 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     }
 
     return state;
+}
+
+function tickToVisualizer(state: GameState): void {
+    if(state.tick.troops.length > 0){
+        console.log("Number: ", state.tick.troops[0].endTick, state.tick.id, state.planetsDistances[state.tick.troops[0].from][state.tick.troops[0].to])
+        console.log(1 - (state.tick.troops[0].endTick - state.tick.id) / (state.planetsDistances[state.tick.troops[0].from][state.tick.troops[0].to]))
+    }
+    tickLog.push(
+        {
+            planets: state.tick.planets.map(planet => {
+                return {
+                    id: planet.id,
+                    player: planet.player === null ? null : planet.player.id,
+                    population: planet.population,
+                }
+            }),
+            troops: state.tick.troops.map(troop => {
+                return {
+                    id: troop.id,
+                    from: troop.from,
+                    to: troop.to,
+                    player: troop.player,
+                    size: troop.size,
+                    progress: 1 - (troop.endTick - state.tick.id) / (state.planetsDistances[troop.from][troop.to]),
+                }
+            }),
+        }
+    );
+}
+
+function stateToVisualizer(state: GameState): void {
+    let stateVis: GameStateVis = {
+        init: {
+            board: state.board,
+            planets: state.planets.map(planet => {
+                return {
+                    id: planet.id,
+                    x: planet.x,
+                    y: planet.y,
+                    size: planet.size,
+                    player: tickLog[0].planets[planet.id].player,
+                }
+            }),
+            players: state.players.map(player => {
+                return {
+                    id: player.id,
+                    name: player.name,
+                }
+            }),
+        },
+        ticks: tickLog,
+    }
+    let json = JSON.stringify(stateVis);
+    console.log(json);
+    //var fs = require('fs');
+    //fs.writeFile('myjsonfile.json', json, 'utf8');
 }
