@@ -60,7 +60,7 @@ export let initState2: GameState = {
 export let bots2 = new BotPool(["./bots/win_bot.out", './bots/idle_bot.out', "./bots/win_bot.out", "./bots/win_bot.out"]);
 
 export let initState3: GameState = {
-    players: [{ id: 1, name: "1" }, { id: 2, name: "2" }, { id: 3, name: "3"}],
+    players: [{ id: 0, name: "0" }, { id: 1, name: "1" }, { id: 2, name: "2"}],
     board: {
         width: 200,
         height: 200,
@@ -77,11 +77,11 @@ export let initState3: GameState = {
     tick: {
         id: 0,
         planets: [
-            { id: 0, player: {id: 1, startingTick: 0}, population: 10 },
+            { id: 0, player: {id: 0, startingTick: 0}, population: 10 },
             { id: 1, player: null, population: 1 },
-            { id: 2, player: {id: 2, startingTick: 0}, population: 10 },
+            { id: 2, player: {id: 1, startingTick: 0}, population: 10 },
             { id: 3, player: null, population: 1 },
-            { id: 4, player: {id: 3, startingTick: 0}, population: 10 },
+            { id: 4, player: {id: 2, startingTick: 0}, population: 10 },
             { id: 5, player: null, population: 1 },
         ],
         troops: [],
