@@ -1,7 +1,7 @@
 import { Bot, BotPool } from "./BotWraper";
 import { PlayerID, Tick, TickVisualizer, GameState, GameStateVis, UserStep } from "./types";
-import { initState2 as initState } from "./initStates";
-import { bots2 as bots } from "./initStates";
+import { initState3 as initState } from "./initStates";
+import { bots3 as bots } from "./initStates";
 
 /*interface Bot {
     playerID: PlayerID;
@@ -26,7 +26,8 @@ async function makeMatch(state: GameState, bots: BotPool) {
     let tickLog : Tick[] = [];
     tickToVisualizer(state); // Save for visualizer
     while (isThereAliveBot && state.tick.id < 300) {
-        console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3]);
+        console.log(state.tick.id, state.tick.planets);
+        state.tick.id++;
         let userSteps : UserStep[] = []
         for (let i = 0; i < workingBots.length; i++) {
             //console.log(tickToString(state, i));
@@ -67,9 +68,9 @@ async function makeMatch(state: GameState, bots: BotPool) {
             }
         }
         if (!atLeastTwoPlayer) isThereAliveBot = false;
-        state.tick.id++;
         tickToVisualizer(state); // Save for visualizer
     }
+    console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3], state.tick.planets[4], state.tick.planets[5]);
     console.log("ENDED");
     stateToVisualizer(state);
 }
@@ -207,12 +208,14 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
             sizes[user.who] += user.size;
         }
         // Add neutral planet population to the fight
-        sizes[state.players.length] = state.tick.planets[i].player === null ? 0 : state.tick.planets[i].population;
+        sizes[state.players.length] = state.tick.planets[i].player === null ? state.tick.planets[i].population : 0;
         // Planet owner is coming to this planet
         let planetOwner = state.tick.planets[i].player;
         if (planetOwner !== null) { // TODO: state.tick.planets[i].player === null
             sizes[planetOwner.id] += state.tick.planets[i].population;
         }
+        //console.log("Planet:", state.tick.planets[i]);
+        //console.log("Sizes:", sizes);
         // Get the two biggest sizes
         let max : {who: number | null, size: number} = {who: null, size: 0};
         let max2 : {who: number | null, size: number} = {who: null, size: 0};
@@ -224,6 +227,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
                 max2 = {who: i, size: sizes[i]};
             }
         }
+        //console.log("Maxok:", max, max2)
         // Determine the winner, update the planet
         if (max.size === max2.size){
             state.tick.planets[i].player = null;
@@ -239,6 +243,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
             state.tick.planets[i].population = max.size - max2.size;
         }
     }
+    //console.log("Population:", state.tick.planets[1].population)
 
     // Add new troops depends on the efficiency and startingTick of the planets
     for(let i = 0; i < state.tick.planets.length; i++) {
