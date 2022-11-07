@@ -45,6 +45,7 @@ export type TickVisualizer = {
         to: PlanetID,
         player: PlayerID,
         size: number,
+        distance: number,
         progress: number,
     }[];
 //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend

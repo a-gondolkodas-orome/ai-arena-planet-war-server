@@ -56,7 +56,7 @@ export class Bot {
         return new Promise((resolve, reject) => {
             this.process.stdin.write(message + '\n', (err) => {
                 if (!!err) {
-                    console.log("error", err);
+                    console.log("error writing", err);
                     reject(err);
                 }
                 else {
@@ -77,7 +77,6 @@ export class Bot {
                 this.awailable_time -= 30;
                 yield delay(30);
             }
-            console.log("waited for: " + number_of_lines + " lines, has: " + this.std_out.length, this.awailable_time, this.error_code);
             if (this.std_out.length >= number_of_lines) {
                 const data = Array.from({ length: number_of_lines }, () => this.std_out.dequeue()).join('\n');
                 resolve({ id: this.id, data: data });

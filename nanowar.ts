@@ -277,7 +277,8 @@ function tickToVisualizer(state: GameState): void {
                     to: troop.to,
                     player: troop.player,
                     size: troop.size,
-                    progress: 1 - (troop.endTick - state.tick.id) / (state.planetsDistances[troop.from][troop.to]),
+                    distance: state.planetsDistances[troop.from][troop.to],
+                    progress: state.planetsDistances[troop.from][troop.to] - troop.endTick + state.tick.id,
                 }
             }),
         }

@@ -7,29 +7,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { BotPool } from "./BotWraper";
-let mapSize = [100, 100];
-let initState = {
-    players: [{ id: 1, name: "1" }, { id: 2, name: "2" }],
-    planets: [
-        { id: 0, position: [0, 0], efficiency: 1 },
-        { id: 1, position: [10, 10], efficiency: 1 },
-        { id: 2, position: [0, 10], efficiency: 1 },
-        { id: 3, position: [10, 0], efficiency: 1 },
-    ],
-    planetsDistances: [[0, 14, 10, 10], [14, 0, 10, 10], [10, 10, 0, 14], [10, 10, 14, 0]],
-    tick: {
-        id: 0,
-        planets: [
-            { id: 0, player: { id: 0, startingTick: 0 }, population: 100 },
-            { id: 1, player: { id: 1, startingTick: 0 }, population: 100 },
-            { id: 2, player: null, population: 100 },
-            { id: 3, player: null, population: 100 },
-        ],
-        troops: [],
-    }
-};
-let bots = new BotPool(['./bots/idle_bot.out', "./bots/win_bot.out"]);
+import { initState3 as initState } from "./initStates";
+import { bots3 as bots } from "./initStates";
+let troopIDCounter = 0;
+let tickLog = [];
 makeMatch(initState, bots);
 function makeMatch(state, bots) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -38,17 +19,27 @@ function makeMatch(state, bots) {
             console.log("sending starting pos to bot " + i);
             workingBots[i].send(startingPosToString(state, i));
         }
-        let isThereActiveBot = true;
-        while (isThereActiveBot && state.tick.id < 1000) {
+        let isThereAliveBot = true;
+        tickToVisualizer(state);
+        while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 300) {
+            console.log(state.tick.id, state.tick.planets);
+            state.tick.id++;
             let userSteps = [];
             for (let i = 0; i < workingBots.length; i++) {
                 yield workingBots[i].send(tickToString(state, i));
-                let answer = yield workingBots[i].ask();
-                let validatedStep = validateStep(state, i, answer.data);
+                let firstAnswer = yield workingBots[i].ask();
+                let numberOfMove = parseInt(firstAnswer.data);
+                let answer = yield workingBots[i].ask(numberOfMove);
+                if (numberOfMove !== 0) {
+                    console.log("send:", answer);
+                }
+                let validatedStep = validateStep(state, i, numberOfMove, answer.data);
                 if (!validatedStep.hasOwnProperty("error")) {
                     userSteps.push(validatedStep);
                 }
                 else {
+                    let tmp = validatedStep;
+                    console.log("ERRORR!!!", tmp.error);
                     userSteps.push([]);
                 }
             }
@@ -66,8 +57,12 @@ function makeMatch(state, bots) {
                 }
             }
             if (!atLeastTwoPlayer)
-                isThereActiveBot = false;
+                isThereAliveBot = false;
+            tickToVisualizer(state);
         }
+        console.log(state.tick.id, state.tick.planets[0], state.tick.planets[1], state.tick.planets[2], state.tick.planets[3], state.tick.planets[4], state.tick.planets[5]);
+        console.log("ENDED");
+        stateToVisualizer(state);
     });
 }
 function testingBots(state, bots) {
@@ -83,7 +78,7 @@ function startingPosToString(state, player) {
     let numberOfPlanets = state.planets.length;
     let planets = numberOfPlanets.toString() + "\n";
     for (let i = 0; i < numberOfPlanets; i++) {
-        planets += state.planets[i].position[0].toString() + " " + state.planets[i].position[1].toString() + " " + state.planets[i].efficiency.toString() + "\n";
+        planets += state.planets[i].x.toString() + " " + state.planets[i].y.toString() + " " + state.planets[i].efficiency.toString() + "\n";
     }
     if (state.planetsDistances.length !== numberOfPlanets) {
         throw new Error("Invalid form of planetsDistances");
@@ -111,18 +106,19 @@ function tickToString(state, player) {
     }
     tick += state.tick.troops.length.toString() + "\n";
     for (let troop of state.tick.troops) {
-        tick += troop.who + " " + troop.from.toString() + " " + troop.to.toString() + " " + troop.size.toString() + troop.endTick + "\n";
+        tick += troop.player + " " + troop.from.toString() + " " + troop.to.toString() + " " + troop.size.toString() + " " + troop.endTick + "\n";
     }
     return tick;
 }
-function validateStep(state, playerID, input) {
+function validateStep(state, playerID, numberOfTroops, input) {
     try {
-        let lines = input.concat("\n");
-        let numberOfTroops = parseInt(lines[0]);
+        if (numberOfTroops === 0)
+            return [];
+        let lines = input.split("\n");
         let troops = [];
         let fromTo = new Set();
         for (let i = 0; i < numberOfTroops; i++) {
-            let [from, to, size] = lines[1].split(" ").map(x => parseInt(x));
+            let [from, to, size] = lines[i].split(" ").map(x => parseInt(x));
             if (state.tick.planets.length < from || state.tick.planets.length < to) {
                 return { error: "Invalid planet id" };
             }
@@ -145,6 +141,7 @@ function validateStep(state, playerID, input) {
         return troops;
     }
     catch (e) {
+        console.log(e);
         return { error: "Invalid input" };
     }
 }
@@ -153,25 +150,22 @@ function updateState(state, steps) {
         for (let troop of step) {
             state.tick.planets[troop.from].population -= troop.size;
             state.tick.troops.push({
+                id: troopIDCounter++,
                 from: troop.from,
                 to: troop.to,
-                who: troop.playerID,
+                player: troop.playerID,
                 size: troop.size,
                 endTick: state.tick.id + state.planetsDistances[troop.from][troop.to],
             });
         }
     }
-    let planetWaitingList = [];
+    let planetWaitingList = Array.from(Array(state.planets.length), () => []);
     for (let i = 0; i < state.tick.troops.length; i++) {
         if (state.tick.troops[i].endTick === state.tick.id) {
             let planet = state.tick.troops[i].to;
-            let user = { who: state.tick.troops[i].who, size: state.tick.troops[i].size };
-            if (planetWaitingList[planet] === undefined) {
-                planetWaitingList[planet] = [user];
-            }
-            else {
-                planetWaitingList[planet].push(user);
-            }
+            let user = { who: state.tick.troops[i].player, size: state.tick.troops[i].size };
+            planetWaitingList[planet].push(user);
+            console.log("Arrived:", planetWaitingList);
             state.tick.troops.splice(i, 1);
             i--;
         }
@@ -181,34 +175,40 @@ function updateState(state, steps) {
         if (planet.length === 0) {
             continue;
         }
-        let sizes = new Array(state.players.length).fill(0);
+        let sizes = new Array(state.players.length + 1).fill(0);
         for (let user of planet) {
             sizes[user.who] += user.size;
         }
+        sizes[state.players.length] = state.tick.planets[i].player === null ? state.tick.planets[i].population : 0;
         let planetOwner = state.tick.planets[i].player;
         if (planetOwner !== null) {
             sizes[planetOwner.id] += state.tick.planets[i].population;
         }
         let max = { who: null, size: 0 };
         let max2 = { who: null, size: 0 };
-        for (let i = 0; i < state.players.length; i++) {
-            if (sizes[i].size > max.size) {
+        for (let i = 0; i < state.players.length + 1; i++) {
+            if (sizes[i] > max.size) {
                 max2 = max;
                 max = { who: i, size: sizes[i] };
             }
-            else if (sizes[i].size > max2.size) {
+            else if (sizes[i] > max2.size) {
                 max2 = { who: i, size: sizes[i] };
             }
         }
         if (max.size === max2.size) {
             state.tick.planets[i].player = null;
+            state.tick.planets[i].population = 0;
         }
         else if (max.who !== null) {
             state.tick.planets[i].player = { id: max.who, startingTick: state.tick.id };
             state.tick.planets[i].population = max.size - max2.size;
         }
-        else {
-            throw new Error("Internal Error! Something went wrong with the fight.");
+        else if (max.who === null) {
+            state.tick.planets[i].player = null;
+            if (max2.who === null || max2.size === 0) {
+                throw new Error("Internal Error! Something went wrong with the fight.");
+            }
+            state.tick.planets[i].population = max.size - max2.size;
         }
     }
     for (let i = 0; i < state.tick.planets.length; i++) {
@@ -223,5 +223,52 @@ function updateState(state, steps) {
         }
     }
     return state;
+}
+function tickToVisualizer(state) {
+    tickLog.push({
+        planets: state.tick.planets.map(planet => {
+            return {
+                id: planet.id,
+                player: planet.player === null ? null : planet.player.id,
+                population: planet.population,
+            };
+        }),
+        troops: state.tick.troops.map(troop => {
+            return {
+                id: troop.id,
+                from: troop.from,
+                to: troop.to,
+                player: troop.player,
+                size: troop.size,
+                distance: state.planetsDistances[troop.from][troop.to],
+                progress: state.planetsDistances[troop.from][troop.to] - troop.endTick + state.tick.id,
+            };
+        }),
+    });
+}
+function stateToVisualizer(state) {
+    let stateVis = {
+        init: {
+            board: state.board,
+            planets: state.planets.map(planet => {
+                return {
+                    id: planet.id,
+                    x: planet.x,
+                    y: planet.y,
+                    size: planet.size,
+                    player: tickLog[0].planets[planet.id].player,
+                };
+            }),
+            players: state.players.map(player => {
+                return {
+                    id: player.id,
+                    name: player.name,
+                };
+            }),
+        },
+        ticks: tickLog,
+    };
+    let json = JSON.stringify(stateVis);
+    console.log(json);
 }
 //# sourceMappingURL=nanowar.js.map
