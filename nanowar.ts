@@ -23,9 +23,8 @@ async function makeMatch(state: GameState, bots: BotPool) {
         workingBots[i].send(startingPosToString(state, i));
     }
     let isThereAliveBot = true;
-    let tickLog : Tick[] = [];
     tickToVisualizer(state); // Save for visualizer
-    while (isThereAliveBot && state.tick.id < 300) {
+    while ((isThereAliveBot || state.tick.troops.length !== 0)  && state.tick.id < 300) {
         console.log(state.tick.id, state.tick.planets);
         state.tick.id++;
         let userSteps : UserStep[] = []
