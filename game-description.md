@@ -1,9 +1,10 @@
 # Planet War
 
 ## Játékszabályok
+
 Ebben a játékban bolygók irányításáért versenyeznek a játékosok.
 A cél, hogy csapatok gyűjtésével és azok okos mozgatásával minden bolygót elfoglaljunk.
-A bolygókon  kezdetben bizonyos számú semleges csapat állomásozik.
+A bolygókon kezdetben bizonyos számú semleges csapat állomásozik.
 A játékosok egy-egy anyabolygóról indulnak.
 
 A játékosok minden körben elindíthatják a rendelkezésre álló egységek egy részét a többi bolygó felé.
@@ -13,6 +14,7 @@ Ha megérkeznek egy saját bolygóra, akkor az egységek száma hozzáadódik a 
 Ha ellenséges bolygóra érnek, akkor a bolygó annak az irányítása alá kerül, akinek a legtöbb egysége van, és az egységek száma a második legnagyobb csapatmérettel csökken.
 
 ### Példa
+
 1. Ha piros 5 egységgel van jelen, és kék 3-al érkezik, akkor piros megtartja a bolygót 2 egységgel.
 2. Ha piros 5 egységgel van jelen, kék 4, zöld pedig 8 egységgel egyszerre érkeznek meg, akkor 3-an harcolnak és zöld lesz a bolygó tulajdonosa 8-5=3 egységgel.
 
@@ -58,7 +60,7 @@ Minden bolygóra (_P_ sor):\
 `x`, `y`, `efficiency`: 3 egész szám, a bolygó két koordinátája és a hatékonysága\
 A bolygókat _0_-tól _P-1_-ig számozzuk (később planetID), az _i_. sor az _i_ sorszámú bolygó adatait tartalmazza.
 
-Minden bolygó-párra (_P*P_-s szimmetrikus mátrix):\
+Minden bolygó-párra (_P\*P_-s szimmetrikus mátrix):\
 `distance[i][j]` : egész szám, az _i_. és _j_. bolygó között ennyi körig tart az utazás. (mindkét irányban ugyanannyi)
 
 ### Körönkénti üzenetek
@@ -105,6 +107,7 @@ Szerver:\
 Bot:\
 `OK`\
 Szerver:
+
 ```
 1
 4
@@ -119,6 +122,7 @@ Szerver:
 ```
 
 Szerver (1. tick)
+
 ```
 0
 0 0 100

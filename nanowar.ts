@@ -10,7 +10,7 @@ import * as fs from "fs";
 }*/
 
 let troopIDCounter = 0;
-let tickLog: TickVisualizer[] = [];
+const tickLog: TickVisualizer[] = [];
 
 if (process.argv.length > 1) {
   makeMatch(
@@ -25,7 +25,7 @@ if (process.argv.length > 1) {
 // TODOS: bot.doStep(state)
 
 async function makeMatch(state: GameState, bots: BotPool) {
-  let workingBots = await testingBots(state, bots);
+  const workingBots = await testingBots(state, bots);
   for (let i = 0; i < workingBots.length; i++) {
     // Todo: workingbots.bots is ugly
     console.log("sending starting pos to bot " + i);
@@ -36,28 +36,28 @@ async function makeMatch(state: GameState, bots: BotPool) {
   while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 300) {
     console.log(state.tick.id, state.tick.planets);
     state.tick.id++;
-    let userSteps: UserStep[] = [];
+    const userSteps: UserStep[] = [];
     for (let i = 0; i < workingBots.length; i++) {
       //console.log(tickToString(state, i));
       await workingBots[i].send(tickToString(state, i));
 
       // TODO: it's game specific
-      let firstAnswer = await workingBots[i].ask();
+      const firstAnswer = await workingBots[i].ask();
       //console.log("firstAnswer:", firstAnswer);
-      let numberOfMove = parseInt(firstAnswer.data);
+      const numberOfMove = parseInt(firstAnswer.data);
       //console.log(firstAnswer.data);
-      let answer = await workingBots[i].ask(numberOfMove);
+      const answer = await workingBots[i].ask(numberOfMove);
       if (numberOfMove !== 0) {
         console.log("send:", answer);
       }
       //console.log(i, answer.data)
 
-      let validatedStep = validateStep(state, i, numberOfMove, answer.data);
+      const validatedStep = validateStep(state, i, numberOfMove, answer.data);
 
       if (!validatedStep.hasOwnProperty("error")) {
         userSteps.push(validatedStep as UserStep); // TODO: implement error handling: throw an error and use try-catch
       } else {
-        let tmp = validatedStep as { error: string };
+        const tmp = validatedStep as { error: string };
         console.log("ERRORR!!!", tmp.error);
         userSteps.push([]);
       }
@@ -66,7 +66,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
 
     let lastPlayer = -1;
     let atLeastTwoPlayer = false;
-    for (let planet of state.tick.planets) {
+    for (const planet of state.tick.planets) {
       if (planet.player !== null) {
         if (lastPlayer === -1) {
           lastPlayer = planet.player.id;
@@ -93,15 +93,15 @@ async function makeMatch(state: GameState, bots: BotPool) {
 
 async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
   await bots.sendAll("START");
-  let botAnswers = await bots.askAll();
+  const botAnswers = await bots.askAll();
   console.log(botAnswers);
-  let workingBots: Bot[] = bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
+  const workingBots: Bot[] = bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
   return workingBots;
 }
 
 function startingPosToString(state: GameState, player: PlayerID): string {
   // Planets
-  let numberOfPlanets = state.planets.length;
+  const numberOfPlanets = state.planets.length;
   let planets = numberOfPlanets.toString() + "\n";
   for (let i = 0; i < numberOfPlanets; i++) {
     planets +=
@@ -134,7 +134,7 @@ function startingPosToString(state: GameState, player: PlayerID): string {
 
 function tickToString(state: GameState, player: PlayerID): string {
   let tick = state.tick.id.toString() + "\n";
-  for (let planet of state.tick.planets) {
+  for (const planet of state.tick.planets) {
     // If no player owns the planet, return -1
     let playerID = -1;
     if (planet.player !== null) {
@@ -143,7 +143,7 @@ function tickToString(state: GameState, player: PlayerID): string {
     tick += planet.id.toString() + " " + playerID + " " + planet.population.toString() + "\n";
   }
   tick += state.tick.troops.length.toString() + "\n";
-  for (let troop of state.tick.troops) {
+  for (const troop of state.tick.troops) {
     tick +=
       troop.player +
       " " +
@@ -171,15 +171,15 @@ function validateStep(
 ): UserStep | { error: string } {
   try {
     if (numberOfTroops === 0) return [];
-    let lines = input.split("\n");
-    let troops: UserStep = [];
-    let fromTo = new Set<string>();
+    const lines = input.split("\n");
+    const troops: UserStep = [];
+    const fromTo = new Set<string>();
     for (let i = 0; i < numberOfTroops; i++) {
-      let [from, to, size] = lines[i].split(" ").map((x) => parseInt(x));
+      const [from, to, size] = lines[i].split(" ").map((x) => parseInt(x));
       if (state.tick.planets.length < from || state.tick.planets.length < to) {
         return { error: "Invalid planet id" }; // TODO: do not punish so strongly. Just ignore one line if it is invalid, not the whole step.
       }
-      let planetPlayer = state.tick.planets[from].player;
+      const planetPlayer = state.tick.planets[from].player;
       if (planetPlayer === null) {
         return { error: "Invalid Planet! Planet is not owned by any player" };
       }
@@ -207,8 +207,8 @@ function validateStep(
 
 function updateState(state: GameState, steps: UserStep[]): GameState {
   // Add troops that are leaving their planets
-  for (let step of steps) {
-    for (let troop of step) {
+  for (const step of steps) {
+    for (const troop of step) {
       state.tick.planets[troop.from].population -= troop.size;
       state.tick.troops.push({
         id: troopIDCounter++,
@@ -222,14 +222,14 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
   }
 
   // Process troops that are arriving to their planets, preparing for fight
-  let planetWaitingList: { who: PlayerID; size: number }[][] = Array.from(
+  const planetWaitingList: { who: PlayerID; size: number }[][] = Array.from(
     Array(state.planets.length),
     () => [],
   ); // TODO: use dictionary instead of array
   for (let i = 0; i < state.tick.troops.length; i++) {
     if (state.tick.troops[i].endTick === state.tick.id) {
-      let planet = state.tick.troops[i].to;
-      let user = { who: state.tick.troops[i].player, size: state.tick.troops[i].size };
+      const planet = state.tick.troops[i].to;
+      const user = { who: state.tick.troops[i].player, size: state.tick.troops[i].size };
       // Add planets to
       planetWaitingList[planet].push(user);
       console.log("Arrived:", planetWaitingList);
@@ -241,20 +241,20 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
   for (let i = 0; i < planetWaitingList.length; i++) {
     // i = planetID
     // No one is coming to this planet
-    let planet = planetWaitingList[i];
+    const planet = planetWaitingList[i];
     if (planet.length === 0) {
       continue;
     }
     // Preparing some variables
-    let sizes = new Array(state.players.length + 1).fill(0); // TODO: use dictionary instead of array
-    for (let user of planet) {
+    const sizes = new Array(state.players.length + 1).fill(0); // TODO: use dictionary instead of array
+    for (const user of planet) {
       sizes[user.who] += user.size;
     }
     // Add neutral planet population to the fight
     sizes[state.players.length] =
       state.tick.planets[i].player === null ? state.tick.planets[i].population : 0;
     // Planet owner is coming to this planet
-    let planetOwner = state.tick.planets[i].player;
+    const planetOwner = state.tick.planets[i].player;
     if (planetOwner !== null) {
       // TODO: state.tick.planets[i].player === null
       sizes[planetOwner.id] += state.tick.planets[i].population;
@@ -292,11 +292,11 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
 
   // Add new troops depends on the efficiency and startingTick of the planets
   for (let i = 0; i < state.tick.planets.length; i++) {
-    let planet = state.tick.planets[i];
+    const planet = state.tick.planets[i];
     if (planet.player !== null) {
-      let startingTick = planet.player.startingTick;
-      let currentTick = state.tick.id;
-      let efficiency = state.planets[i].efficiency;
+      const startingTick = planet.player.startingTick;
+      const currentTick = state.tick.id;
+      const efficiency = state.planets[i].efficiency;
       if (currentTick - startingTick > 0 && (currentTick - startingTick) % efficiency === 0) {
         state.tick.planets[i].population++;
       }
@@ -330,7 +330,7 @@ function tickToVisualizer(state: GameState): void {
 }
 
 function stateToVisualizer(state: GameState): void {
-  let stateVis: GameStateVis = {
+  const stateVis: GameStateVis = {
     init: {
       board: state.board,
       planets: state.planets.map((planet) => {
@@ -351,7 +351,7 @@ function stateToVisualizer(state: GameState): void {
     },
     ticks: tickLog,
   };
-  let json = JSON.stringify(stateVis);
+  const json = JSON.stringify(stateVis);
   // console.log(json);
   fs.writeFileSync("match.log", json, "utf8");
 }

@@ -12,7 +12,7 @@
     "prettier:check": "npx prettier --check .",
     "prettier:fix": "npx prettier --write .",
     "eslint:check": "npx eslint --report-unused-disable-directives ./*.ts",
-    "eslint:fix": "npx eslint:check --fix"
+    "eslint:fix": "npx eslint --fix --report-unused-disable-directives ./*.ts"
   },
   "browser": {
     "child_process": false
