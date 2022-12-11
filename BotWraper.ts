@@ -36,7 +36,7 @@ export class Bot {
     this.std_err = new Queue<string>();
     this.awailable_time = Bot.starting_awailable_time;
 
-    this.process = spawn(command, [], { shell: true });
+    this.process = spawn(`"${command}"`, [], { shell: true });
     this.process.on("error", (err) => {
       this.error_code = ErrorCode.UnexpectedExitOfCode;
     });
@@ -119,6 +119,7 @@ export class Bot {
 
 export class BotPool {
   public bots: Bot[];
+
   public constructor(file_names: string[]) {
     this.bots = file_names.map((name) => new Bot(name));
   }
