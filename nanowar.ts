@@ -16,8 +16,7 @@ if (process.argv.length > 1) {
   makeMatch(
     JSON.parse(fs.readFileSync(process.argv[2], { encoding: "utf-8" })) as GameState,
     new BotPool(process.argv.slice(3)),
-  );
-  process.exit(0); // TODO this shouldn't be necessary. I guess the running bots from initStates prevent exiting normally.
+  ).then(() => process.exit(0)); // TODO the exit shouldn't be necessary. I guess the running bots from initStates prevent exiting normally.
 } else {
   makeMatch(initState, bots);
 }
