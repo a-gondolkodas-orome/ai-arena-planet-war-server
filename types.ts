@@ -11,8 +11,9 @@ type Planet = {
   id: PlanetID;
   x: number;
   y: number;
-  size: number; // just for visualizer
   efficiency: number;
+  // just for visualizer
+  size: number;
 };
 
 export type Tick = {

@@ -12,7 +12,7 @@ import * as fs from "fs";
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
 
-if (process.argv.length > 1) {
+if (process.argv.length > 2) {
   makeMatch(
     JSON.parse(fs.readFileSync(process.argv[2], { encoding: "utf-8" })) as GameState,
     new BotPool(process.argv.slice(3)),
@@ -28,7 +28,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
   for (let i = 0; i < workingBots.length; i++) {
     // Todo: workingbots.bots is ugly
     console.log("sending starting pos to bot " + i);
-    workingBots[i].send(startingPosToString(state, i));
+    await workingBots[i].send(startingPosToString(state, i));
   }
   let isThereAliveBot = true;
   tickToVisualizer(state); // Save for visualizer
@@ -43,7 +43,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
       // TODO: it's game specific
       const firstAnswer = await workingBots[i].ask();
       //console.log("firstAnswer:", firstAnswer);
-      const numberOfMove = parseInt(firstAnswer.data);
+      const numberOfMove = myParseInt(firstAnswer.data, { min: 0, max: 100 });
       //console.log(firstAnswer.data);
       const answer = await workingBots[i].ask(numberOfMove);
       if (numberOfMove !== 0) {
@@ -54,7 +54,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
       const validatedStep = validateStep(state, i, numberOfMove, answer.data);
 
       if (!validatedStep.hasOwnProperty("error")) {
-        userSteps.push(validatedStep as UserStep); // TODO: implement error handling: throw an error and use try-catch
+        userSteps.push(validatedStep as UserStep); // TODO: beutify it
       } else {
         const tmp = validatedStep as { error: string };
         console.log("ERRORR!!!", tmp.error);
@@ -63,18 +63,8 @@ async function makeMatch(state: GameState, bots: BotPool) {
     }
     state = updateState(state, userSteps);
 
-    let lastPlayer = -1;
-    let atLeastTwoPlayer = false;
-    for (const planet of state.tick.planets) {
-      if (planet.player !== null) {
-        if (lastPlayer === -1) {
-          lastPlayer = planet.player.id;
-        } else if (lastPlayer !== planet.player.id) {
-          atLeastTwoPlayer = true;
-        }
-      }
-    }
-    if (!atLeastTwoPlayer) isThereAliveBot = false;
+    const playersAlive = Array.from(new Set(state.tick.planets.map((planet) => planet.player?.id))).filter((id: any) => id !== undefined);
+    if (playersAlive.length < 2) isThereAliveBot = false;
     tickToVisualizer(state); // Save for visualizer
   }
   console.log(
@@ -91,7 +81,9 @@ async function makeMatch(state: GameState, bots: BotPool) {
 }
 
 async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
+  console.log("before start")
   await bots.sendAll("START");
+  console.log("after start")
   const botAnswers = await bots.askAll();
   console.log(botAnswers);
   const workingBots: Bot[] = bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
@@ -103,13 +95,7 @@ function startingPosToString(state: GameState, player: PlayerID): string {
   const numberOfPlanets = state.planets.length;
   let planets = numberOfPlanets.toString() + "\n";
   for (let i = 0; i < numberOfPlanets; i++) {
-    planets +=
-      state.planets[i].x.toString() +
-      " " +
-      state.planets[i].y.toString() +
-      " " +
-      state.planets[i].efficiency.toString() +
-      "\n";
+    planets += `${state.planets[i].x} ${state.planets[i].y} ${state.planets[i].efficiency}\n`;
   }
 
   // Planet distances
@@ -158,25 +144,28 @@ function tickToString(state: GameState, player: PlayerID): string {
   return tick;
 }
 
-/*let asd = tickToString(initState, 1);
-let qwe = startingPosToString(initState, 1);
-console.log(qwe)*/
-
 function validateStep(
   state: GameState,
   playerID: PlayerID,
   numberOfTroops: number,
   input: string,
 ): UserStep | { error: string } {
+  // TODO: imlement better error messages
   try {
     if (numberOfTroops === 0) return [];
     const lines = input.split("\n");
     const troops: UserStep = [];
     const fromTo = new Set<string>();
     for (let i = 0; i < numberOfTroops; i++) {
-      const [from, to, size] = lines[i].split(" ").map((x) => parseInt(x));
-      if (state.tick.planets.length < from || state.tick.planets.length < to) {
-        return { error: "Invalid planet id" }; // TODO: do not punish so strongly. Just ignore one line if it is invalid, not the whole step.
+      let [from, to, size] = [0, 0, 0];
+      try{
+        [from, to, size] = lines[i].split(" ").map((x) => myParseInt(x, { throwError: true }));
+      } catch(e) {
+        return { error: `Invalid input in line ${i+1}! You should send three numbers separated by spaces.`};
+      }
+      if (state.tick.planets.length < from || state.tick.planets.length < to || from < 0 || to < 0) {
+        return { error: `Invalid planet id in line ${i+1}! They should be between 0 and ${state.tick.planets.length}: ${lines[i]}`};
+        // TODO: do not punish so strongly. Just ignore one line if it is invalid, not the whole step.
       }
       const planetPlayer = state.tick.planets[from].player;
       if (planetPlayer === null) {
@@ -189,7 +178,6 @@ function validateStep(
         return { error: "Invalid size! You don't have enough troops." };
       }
       if (fromTo.has(from.toString() + "_" + to.toString())) {
-        // TODO: toString is probably slow
         return {
           error: "Invalid step! You can't send troops from one planet to another more than once.",
         };
@@ -277,7 +265,10 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
       state.tick.planets[i].player = null;
       state.tick.planets[i].population = 0;
     } else if (max.who !== null) {
-      state.tick.planets[i].player = { id: max.who, startingTick: state.tick.id };
+      if (state.tick.planets[i].player === null || max.who !== state.tick.planets[i].player?.id) {
+        // Update player of the planet if it is changes
+        state.tick.planets[i].player = { id: max.who, startingTick: state.tick.id };
+      }
       state.tick.planets[i].population = max.size - max2.size;
     } else if (max.who === null) {
       state.tick.planets[i].player = null;
@@ -353,4 +344,17 @@ function stateToVisualizer(state: GameState): void {
   const json = JSON.stringify(stateVis);
   // console.log(json);
   fs.writeFileSync("match.log", json, "utf8");
+}
+
+
+// Note: It accepts "4.0" or "4.", but does not accept "4.2"
+function myParseInt(value: string, { min = -Infinity, max = Infinity, defaultValue = 0, throwError = false }): number {
+  const parsed = Number(value);
+  if (Number.isSafeInteger(parsed) && parsed >= min && parsed <= max) {
+    return parsed;
+  }
+  if (throwError) {
+    throw new Error(`Invalid number: ${value}`);
+  }
+  return defaultValue;
 }
