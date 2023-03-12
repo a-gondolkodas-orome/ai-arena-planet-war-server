@@ -1,5 +1,4 @@
 import { ChildProcess, spawn } from "node:child_process";
-import { stringify } from "node:querystring";
 import { Queue } from "queue-typescript";
 
 export enum ErrorCode {
@@ -21,11 +20,11 @@ export class Bot {
   process: ChildProcess;
   std_out: Queue<string>;
   std_err: Queue<string>;
-  awailable_time: number;
+  available_time: number;
 
   private static next_bot_id = 0;
 
-  private static readonly starting_awailable_time: number = 1000; // in ms
+  private static readonly starting_available_time: number = 1000; // in ms
   private static readonly plus_time_per_round: number = 1000; // in ms
 
   public constructor(command: string) {
@@ -34,17 +33,18 @@ export class Bot {
     this.error_code = ErrorCode.Success;
     this.std_out = new Queue<string>();
     this.std_err = new Queue<string>();
-    this.awailable_time = Bot.starting_awailable_time;
+    this.available_time = Bot.starting_available_time;
 
     this.process = spawn(`${command}`, []);
-    this.process.on("error", (err) => {
+    this.process.on("error", (error) => {
+      console.error(error);
       this.error_code = ErrorCode.UnexpectedExitOfCode;
     });
 
     this.process.stdout.on("data", this.processData.bind(this));
     this.process.stderr.on("data", (data) => this.std_err.enqueue(data));
 
-    this.process.on("close", (code) => {
+    this.process.on("close", () => {
       this.active = false;
     });
 
@@ -56,7 +56,7 @@ export class Bot {
     });
   }
 
-  private processData(data: any) {
+  private processData(data: Buffer) {
     data
       .toString()
       .split("\n")
@@ -66,7 +66,7 @@ export class Bot {
   }
 
   public send(message: string): Promise<void> {
-    if (!this.active) return new Promise(() => {});
+    if (!this.active) return Promise.resolve();
 
     return new Promise<void>((resolve, reject) => {
       this.process.stdin.write(message + "\n", (err) => {
@@ -81,35 +81,33 @@ export class Bot {
     });
   }
 
-  public ask(number_of_lines = 1): Promise<Data> {
-    this.awailable_time += Bot.plus_time_per_round;
+  public async ask(number_of_lines = 1) {
+    this.available_time += Bot.plus_time_per_round;
     if (this.error_code !== ErrorCode.Success) {
-      return new Promise((resolve) => resolve({ id: this.id, data: null }));
+      return { id: this.id, data: null };
     }
 
-    return new Promise(async (resolve) => {
-      const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      while (
-        this.std_out.length < number_of_lines &&
-        this.awailable_time > 0 &&
-        this.error_code === ErrorCode.Success
-      ) {
-        this.awailable_time -= 30;
-        await delay(30);
-      }
+    while (
+      this.std_out.length < number_of_lines &&
+      this.available_time > 0 &&
+      this.error_code === ErrorCode.Success
+    ) {
+      this.available_time -= 30;
+      await delay(30);
+    }
 
-      if (this.std_out.length >= number_of_lines) {
-        const data: string = Array.from({ length: number_of_lines }, () =>
-          this.std_out.dequeue(),
-        ).join("\n");
-        resolve({ id: this.id, data: data });
-      } else {
-        // TLE
-        this.error_code = ErrorCode.TLE;
-        resolve({ id: this.id, data: null });
-      }
-    });
+    if (this.std_out.length >= number_of_lines) {
+      const data: string = Array.from({ length: number_of_lines }, () =>
+        this.std_out.dequeue(),
+      ).join("\n");
+      return { id: this.id, data };
+    } else {
+      // TLE
+      this.error_code = ErrorCode.TLE;
+      return { id: this.id, data: null };
+    }
   }
 
   public kill(signal?: NodeJS.Signals | number) {

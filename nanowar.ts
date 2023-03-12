@@ -1,5 +1,5 @@
-import { Bot, BotPool } from "./BotWraper";
-import { PlayerID, Tick, TickVisualizer, GameState, GameStateVis, UserStep } from "./types";
+import { Bot, BotPool } from "./BotWrapper";
+import { PlayerID, TickVisualizer, GameState, GameStateVis, UserStep } from "./types";
 import { initState3 as initState } from "./initStates";
 import { bots3 as bots } from "./initStates";
 import * as fs from "fs";
@@ -16,9 +16,9 @@ if (process.argv.length > 2) {
   makeMatch(
     JSON.parse(fs.readFileSync(process.argv[2], { encoding: "utf-8" })) as GameState,
     new BotPool(process.argv.slice(3)),
-  );
+  ).catch((error) => console.error(error));
 } else {
-  makeMatch(initState, new BotPool(bots));
+  makeMatch(initState, new BotPool(bots)).catch((error) => console.error(error));
 }
 
 // TODOS: bot.doStep(state)
@@ -38,7 +38,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
     const userSteps: UserStep[] = [];
     for (let i = 0; i < workingBots.length; i++) {
       //console.log(tickToString(state, i));
-      await workingBots[i].send(tickToString(state, i));
+      await workingBots[i].send(tickToString(state));
 
       // TODO: it's game specific
       const firstAnswer = await workingBots[i].ask();
@@ -52,20 +52,20 @@ async function makeMatch(state: GameState, bots: BotPool) {
       //console.log(i, answer.data)
 
       const validatedStep = validateStep(state, i, numberOfMove, answer.data);
-
-      if (!validatedStep.hasOwnProperty("error")) {
-        userSteps.push(validatedStep as UserStep); // TODO: beutify it
-      } else {
-        const tmp = validatedStep as { error: string };
-        console.log("ERRORR!!!", tmp.error);
+      if ("error" in validatedStep) {
+        console.log("ERROR!!!", validatedStep.error);
         userSteps.push([]);
+      } else {
+        userSteps.push(validatedStep);
       }
     }
     state = updateState(state, userSteps);
 
     const playersAlive = Array.from(
-      new Set(state.tick.planets.map((planet) => planet.player?.id)),
-    ).filter((id: any) => id !== undefined);
+      new Set(
+        state.tick.planets.map((planet) => planet.player?.id).filter((id) => id !== undefined),
+      ),
+    );
     if (playersAlive.length < 2) isThereAliveBot = false;
     tickToVisualizer(state); // Save for visualizer
   }
@@ -84,13 +84,10 @@ async function makeMatch(state: GameState, bots: BotPool) {
 }
 
 async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
-  console.log("before start");
   await bots.sendAll("START");
-  console.log("after start");
   const botAnswers = await bots.askAll();
   console.log(botAnswers);
-  const workingBots: Bot[] = bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
-  return workingBots;
+  return bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
 }
 
 function startingPosToString(state: GameState, player: PlayerID): string {
@@ -120,7 +117,7 @@ function startingPosToString(state: GameState, player: PlayerID): string {
   return player.toString() + "\n" + planets + planetsDistances;
 }
 
-function tickToString(state: GameState, player: PlayerID): string {
+function tickToString(state: GameState): string {
   let tick = state.tick.id.toString() + "\n";
   for (const planet of state.tick.planets) {
     // If no player owns the planet, return -1
@@ -153,7 +150,7 @@ function validateStep(
   numberOfTroops: number,
   input: string,
 ): UserStep | { error: string } {
-  // TODO: imlement better error messages
+  // TODO: implement better error messages
   try {
     if (numberOfTroops === 0) return [];
     const lines = input.split("\n");
@@ -286,7 +283,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
         state.tick.planets[i].player = { id: max.who, startingTick: state.tick.id };
       }
       state.tick.planets[i].population = max.size - max2.size;
-    } else if (max.who === null) {
+    } else {
       state.tick.planets[i].player = null;
       if (max2.who === null || max2.size === 0) {
         throw new Error("Internal Error! Something went wrong with the fight.");

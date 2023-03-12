@@ -1,4 +1,3 @@
-import { BotPool } from "./BotWraper";
 import { GameState } from "./types";
 
 export const initState1: GameState = {
