@@ -2,7 +2,7 @@
   "name": "botwrapper",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/main.js",
+  "main": "./dist/nanowar.js",
   "scripts": {
     "start": "npm run build && npm run run",
     "build": "npx tsc",

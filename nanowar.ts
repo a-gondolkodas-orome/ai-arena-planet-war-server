@@ -16,9 +16,9 @@ if (process.argv.length > 2) {
   makeMatch(
     JSON.parse(fs.readFileSync(process.argv[2], { encoding: "utf-8" })) as GameState,
     new BotPool(process.argv.slice(3)),
-  ).then(() => process.exit(0)); // TODO the exit shouldn't be necessary. I guess the running bots from initStates prevent exiting normally.
+  );
 } else {
-  makeMatch(initState, bots);
+  makeMatch(initState, new BotPool(bots));
 }
 
 // TODOS: bot.doStep(state)
@@ -63,7 +63,9 @@ async function makeMatch(state: GameState, bots: BotPool) {
     }
     state = updateState(state, userSteps);
 
-    const playersAlive = Array.from(new Set(state.tick.planets.map((planet) => planet.player?.id))).filter((id: any) => id !== undefined);
+    const playersAlive = Array.from(
+      new Set(state.tick.planets.map((planet) => planet.player?.id)),
+    ).filter((id: any) => id !== undefined);
     if (playersAlive.length < 2) isThereAliveBot = false;
     tickToVisualizer(state); // Save for visualizer
   }
@@ -78,12 +80,13 @@ async function makeMatch(state: GameState, bots: BotPool) {
   );
   console.log("ENDED");
   stateToVisualizer(state);
+  await bots.stopAll();
 }
 
 async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
-  console.log("before start")
+  console.log("before start");
   await bots.sendAll("START");
-  console.log("after start")
+  console.log("after start");
   const botAnswers = await bots.askAll();
   console.log(botAnswers);
   const workingBots: Bot[] = bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
@@ -158,13 +161,26 @@ function validateStep(
     const fromTo = new Set<string>();
     for (let i = 0; i < numberOfTroops; i++) {
       let [from, to, size] = [0, 0, 0];
-      try{
+      try {
         [from, to, size] = lines[i].split(" ").map((x) => myParseInt(x, { throwError: true }));
-      } catch(e) {
-        return { error: `Invalid input in line ${i+1}! You should send three numbers separated by spaces.`};
+      } catch (e) {
+        return {
+          error: `Invalid input in line ${
+            i + 1
+          }! You should send three numbers separated by spaces.`,
+        };
       }
-      if (state.tick.planets.length < from || state.tick.planets.length < to || from < 0 || to < 0) {
-        return { error: `Invalid planet id in line ${i+1}! They should be between 0 and ${state.tick.planets.length}: ${lines[i]}`};
+      if (
+        state.tick.planets.length < from ||
+        state.tick.planets.length < to ||
+        from < 0 ||
+        to < 0
+      ) {
+        return {
+          error: `Invalid planet id in line ${i + 1}! They should be between 0 and ${
+            state.tick.planets.length
+          }: ${lines[i]}`,
+        };
         // TODO: do not punish so strongly. Just ignore one line if it is invalid, not the whole step.
       }
       const planetPlayer = state.tick.planets[from].player;
@@ -346,9 +362,11 @@ function stateToVisualizer(state: GameState): void {
   fs.writeFileSync("match.log", json, "utf8");
 }
 
-
 // Note: It accepts "4.0" or "4.", but does not accept "4.2"
-function myParseInt(value: string, { min = -Infinity, max = Infinity, defaultValue = 0, throwError = false }): number {
+function myParseInt(
+  value: string,
+  { min = -Infinity, max = Infinity, defaultValue = 0, throwError = false },
+): number {
   const parsed = Number(value);
   if (Number.isSafeInteger(parsed) && parsed >= min && parsed <= max) {
     return parsed;

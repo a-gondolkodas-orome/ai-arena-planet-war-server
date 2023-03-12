@@ -34,7 +34,7 @@ export const initState1: GameState = {
   },
 };
 
-export const bots1 = new BotPool(["./bots/idle_bot.out", "./bots/win_bot.out"]);
+export const bots1 = ["./bots/idle_bot.out", "./bots/win_bot.out"];
 
 export const initState2: GameState = {
   players: [
@@ -74,12 +74,12 @@ export const initState2: GameState = {
   },
 };
 
-export const bots2 = new BotPool([
+export const bots2 = [
   "./bots/win_bot.out",
   "./bots/idle_bot.out",
   "./bots/win_bot.out",
   "./bots/win_bot.out",
-]);
+];
 
 export const initState3: GameState = {
   players: [
@@ -121,4 +121,4 @@ export const initState3: GameState = {
   },
 };
 
-export const bots3 = new BotPool(["./bots/win_bot.out", "./bots/win_bot.out", "./bots/win_bot.out"]);
+export const bots3 = ["./bots/win_bot.out", "./bots/win_bot.out", "./bots/win_bot.out"];

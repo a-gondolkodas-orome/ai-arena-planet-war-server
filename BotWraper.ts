@@ -36,7 +36,7 @@ export class Bot {
     this.std_err = new Queue<string>();
     this.awailable_time = Bot.starting_awailable_time;
 
-    this.process = spawn(`"${command}"`, [], { shell: true });
+    this.process = spawn(`${command}`, []);
     this.process.on("error", (err) => {
       this.error_code = ErrorCode.UnexpectedExitOfCode;
     });
@@ -112,6 +112,15 @@ export class Bot {
     });
   }
 
+  public kill(signal?: NodeJS.Signals | number) {
+    return this.process.kill(signal);
+  }
+
+  public stop() {
+    this.process.stdin.end();
+    this.kill();
+  }
+
   public debug(): void {
     console.log(this.std_out.toArray());
   }
@@ -130,5 +139,13 @@ export class BotPool {
 
   public askAll(number_of_lines = 1): Promise<Data[]> {
     return Promise.all(this.bots.map((b) => b.ask(number_of_lines)));
+  }
+
+  public killAll(signal?: NodeJS.Signals | number) {
+    for (const bot of this.bots) bot.kill(signal);
+  }
+
+  public stopAll() {
+    for (const bot of this.bots) bot.stop();
   }
 }
