@@ -1,14 +1,14 @@
 {
-    "compilerOptions": {
-      "module": "ESNext",
-      "noImplicitAny": true,
-      "preserveConstEnums": true,
-      "removeComments": true,
-      "outDir": "dist",
-      "rootDir": "src",
-      "sourceMap": true,
-      "target": "ES6",
-      "moduleResolution": "node"
-    },
-    "include": ["src"]
-  }
+  "compilerOptions": {
+    "module": "ESNext",
+    "noImplicitAny": true,
+    "preserveConstEnums": true,
+    "removeComments": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "target": "ES6",
+    "moduleResolution": "node"
+  },
+  "include": ["src"]
+}
