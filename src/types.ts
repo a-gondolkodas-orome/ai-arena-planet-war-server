@@ -1,38 +1,45 @@
-export type PlayerID = number;
+import * as t from "io-ts";
+import { botConfigCodec } from "./common";
 
-type Player = {
-  id: PlayerID;
-  name: string;
-};
+export type BotConfig = t.TypeOf<typeof botConfigCodec>;
 
-type PlanetID = number;
+export const playerCodec = t.type({ id: t.number, name: t.string });
+export type Player = t.TypeOf<typeof playerCodec>;
+export type PlayerID = Player["id"];
 
-type Planet = {
-  id: PlanetID;
-  x: number;
-  y: number;
-  efficiency: number;
+export const planetCodec = t.type({
+  id: t.number,
+  x: t.number,
+  y: t.number,
+  efficiency: t.number,
   // just for visualizer
-  size: number;
-};
+  size: t.number,
+});
+export type Planet = t.TypeOf<typeof planetCodec>;
+export type PlanetID = Planet["id"];
 
-export type Tick = {
-  id: number;
-  planets: {
-    id: PlanetID;
-    player: { id: PlayerID; startingTick: number } | null;
-    population: number; // It can also have population without player
-  }[];
-  troops: {
-    id: number;
-    from: PlanetID;
-    to: PlanetID;
-    player: PlayerID;
-    size: number;
-    endTick: number;
-  }[];
+export const tickCodec = t.type({
+  id: t.number,
+  planets: t.array(
+    t.type({
+      id: t.number,
+      player: t.union([t.type({ id: t.number, startingTick: t.number }), t.null]),
+      population: t.number, // It can also have population without player
+    }),
+  ),
+  troops: t.array(
+    t.type({
+      id: t.number,
+      from: t.number,
+      to: t.number,
+      player: t.number,
+      size: t.number,
+      endTick: t.number,
+    }),
+  ),
   //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
-};
+});
+export type Tick = t.TypeOf<typeof tickCodec>;
 
 export type TickVisualizer = {
   planets: {
@@ -55,13 +62,14 @@ export type TickVisualizer = {
 // hány troop
 // from, to, size
 
-export type GameState = {
-  players: Player[];
-  board: { width: number; height: number };
-  planets: Planet[];
-  planetsDistances: number[][];
-  tick: Tick;
-};
+export const gameStateCodec = t.type({
+  players: t.array(playerCodec),
+  board: t.type({ width: t.number, height: t.number }),
+  planets: t.array(planetCodec),
+  planetsDistances: t.array(t.array(t.number)),
+  tick: tickCodec,
+});
+export type GameState = t.TypeOf<typeof gameStateCodec>;
 
 export type GameStateVis = {
   init: {

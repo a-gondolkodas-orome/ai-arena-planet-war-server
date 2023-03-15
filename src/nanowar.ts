@@ -1,25 +1,30 @@
 import { Bot, BotPool } from "./BotWrapper";
-import { PlayerID, TickVisualizer, GameState, GameStateVis, UserStep } from "./types";
-import { initState3 as initState } from "./initStates";
-import { bots3 as bots } from "./initStates";
+import {
+  PlayerID,
+  TickVisualizer,
+  GameState,
+  GameStateVis,
+  UserStep,
+  gameStateCodec,
+} from "./types";
 import * as fs from "fs";
-
-/*interface Bot {
-    playerID: PlayerID;
-    sendStep: (dataToSend: string) => string,
-}*/
+import { decodeJson } from "./codec";
+import { matchConfigCodec } from "./common";
 
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
 
-if (process.argv.length > 2) {
-  makeMatch(
-    JSON.parse(fs.readFileSync(process.argv[2], { encoding: "utf-8" })) as GameState,
-    new BotPool(process.argv.slice(3)),
-  ).catch((error) => console.error(error));
-} else {
-  makeMatch(initState, new BotPool(bots)).catch((error) => console.error(error));
+if (process.argv.length < 3) {
+  console.error("Provide the path to a match config file as command line parameter");
+  process.exit(1);
 }
+const matchConfig = decodeJson(
+  matchConfigCodec,
+  fs.readFileSync(process.argv[2], { encoding: "utf-8" }),
+);
+const map = decodeJson(gameStateCodec, fs.readFileSync(matchConfig.map, { encoding: "utf-8" }));
+const bots = new BotPool(matchConfig.bots);
+makeMatch(map, bots).catch((error) => console.error(error));
 
 // TODOS: bot.doStep(state)
 

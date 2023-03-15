@@ -93,8 +93,10 @@
         "player": null,
         "population": 1
       },
-      { "id": 3,
-        "player": null, "population": 1
+      {
+        "id": 3,
+        "player": null,
+        "population": 1
       }
     ],
     "troops": []

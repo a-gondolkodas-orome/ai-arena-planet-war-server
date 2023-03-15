@@ -1,5 +1,6 @@
 import { ChildProcess, spawn } from "node:child_process";
 import { Queue } from "queue-typescript";
+import { BotConfig } from "./types";
 
 export enum ErrorCode {
   Success,
@@ -9,12 +10,11 @@ export enum ErrorCode {
 }
 
 export class Data {
-  id: number;
+  id: string;
   data?: string;
 }
 
 export class Bot {
-  id: number;
   error_code: ErrorCode;
   active: boolean;
   process: ChildProcess;
@@ -22,13 +22,10 @@ export class Bot {
   std_err: Queue<string>;
   available_time: number;
 
-  private static next_bot_id = 0;
-
   private static readonly starting_available_time: number = 1000; // in ms
   private static readonly plus_time_per_round: number = 1000; // in ms
 
-  public constructor(command: string) {
-    this.id = Bot.next_bot_id++;
+  public constructor(public id: string, command: string) {
     this.active = true;
     this.error_code = ErrorCode.Success;
     this.std_out = new Queue<string>();
@@ -127,8 +124,8 @@ export class Bot {
 export class BotPool {
   public bots: Bot[];
 
-  public constructor(file_names: string[]) {
-    this.bots = file_names.map((name) => new Bot(name));
+  public constructor(bot_configs: BotConfig[]) {
+    this.bots = bot_configs.map(({ id, runCommand }) => new Bot(id, runCommand));
   }
 
   public sendAll(message: string): Promise<void[]> {
