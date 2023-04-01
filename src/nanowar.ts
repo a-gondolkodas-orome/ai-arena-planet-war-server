@@ -36,8 +36,8 @@ async function makeMatch(state: GameState, bots: BotPool) {
     await workingBots[i].send(startingPosToString(state, i));
   }
   let isThereAliveBot = true;
-  tickToVisualizer(state); // Save for visualizer
-  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 300) {
+  tickToVisualizer(bots, state); // Save for visualizer
+  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 100) {
     console.log(state.tick.id, state.tick.planets);
     state.tick.id++;
     const userSteps: UserStep[] = [];
@@ -72,7 +72,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
       ),
     );
     if (playersAlive.length < 2) isThereAliveBot = false;
-    tickToVisualizer(state); // Save for visualizer
+    tickToVisualizer(bots, state); // Save for visualizer
   }
   console.log(
     state.tick.id,
@@ -84,7 +84,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
     state.tick.planets[5],
   );
   console.log("ENDED");
-  stateToVisualizer(state);
+  stateToVisualizer(bots, state);
   await bots.stopAll();
 }
 
@@ -251,12 +251,12 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
       continue;
     }
     // Preparing some variables
-    const sizes = new Array(state.players.length + 1).fill(0); // TODO: use dictionary instead of array
+    const sizes = new Array(state.playerCount + 1).fill(0); // TODO: use dictionary instead of array
     for (const user of planet) {
       sizes[user.who] += user.size;
     }
     // Add neutral planet population to the fight
-    sizes[state.players.length] =
+    sizes[state.playerCount] =
       state.tick.planets[i].player === null ? state.tick.planets[i].population : 0;
     // Planet owner is coming to this planet
     const planetOwner = state.tick.planets[i].player;
@@ -269,7 +269,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     // Get the two biggest sizes
     let max: { who: number | null; size: number } = { who: null, size: 0 };
     let max2: { who: number | null; size: number } = { who: null, size: 0 };
-    for (let i = 0; i < state.players.length + 1; i++) {
+    for (let i = 0; i < state.playerCount + 1; i++) {
       if (sizes[i] > max.size) {
         max2 = max;
         max = { who: i, size: sizes[i] };
@@ -314,12 +314,12 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
   return state;
 }
 
-function tickToVisualizer(state: GameState): void {
+function tickToVisualizer(botPool: BotPool, state: GameState): void {
   tickLog.push({
     planets: state.tick.planets.map((planet) => {
       return {
         id: planet.id,
-        player: planet.player === null ? null : planet.player.id,
+        player: planet.player === null ? null : botPool.bots[planet.player.id].id,
         population: planet.population,
       };
     }),
@@ -328,7 +328,7 @@ function tickToVisualizer(state: GameState): void {
         id: troop.id,
         from: troop.from,
         to: troop.to,
-        player: troop.player,
+        player: botPool.bots[troop.player].id,
         size: troop.size,
         distance: state.planetsDistances[troop.from][troop.to],
         progress: state.planetsDistances[troop.from][troop.to] - troop.endTick + state.tick.id,
@@ -337,7 +337,7 @@ function tickToVisualizer(state: GameState): void {
   });
 }
 
-function stateToVisualizer(state: GameState): void {
+function stateToVisualizer(botPool: BotPool, state: GameState): void {
   const stateVis: GameStateVis = {
     init: {
       board: state.board,
@@ -350,18 +350,25 @@ function stateToVisualizer(state: GameState): void {
           player: tickLog[0].planets[planet.id].player,
         };
       }),
-      players: state.players.map((player) => {
-        return {
-          id: player.id,
-          name: player.name,
-        };
-      }),
+      players: botPool.bots.map((bot) => bot.id),
     },
     ticks: tickLog,
   };
-  const json = JSON.stringify(stateVis);
-  // console.log(json);
-  fs.writeFileSync("match.log", json, "utf8");
+  fs.writeFileSync("match.log", JSON.stringify(stateVis, undefined, 2), "utf8");
+  const score = new Map<string, number>();
+  for (const player of stateVis.init.players) score.set(player, 0);
+  const lastTick = stateVis.ticks[stateVis.ticks.length - 1];
+  for (const planet of lastTick.planets)
+    if (planet.player) {
+      score.set(planet.player, score.get(planet.player) + planet.population);
+    }
+  for (const troop of lastTick.troops)
+    score.set(troop.player, score.get(troop.player) + troop.size);
+  fs.writeFileSync(
+    "score.json",
+    JSON.stringify(Object.fromEntries(score.entries()), undefined, 2),
+    "utf8",
+  );
 }
 
 // Note: It accepts "4.0" or "4.", but does not accept "4.2"

@@ -6,6 +6,8 @@ a.out
 dist/
 planet-war-bot.zip
 planet-war-server.zip
+match.log
+score.json
 
 *.js
 *.out

@@ -1,14 +1,5 @@
 {
-  "players": [
-    {
-      "id": 1,
-      "name": "1"
-    },
-    {
-      "id": 2,
-      "name": "2"
-    }
-  ],
+  "playerCount": 2,
   "board": {
     "width": 200,
     "height": 200
@@ -18,7 +9,7 @@
       "id": 0,
       "x": 50,
       "y": 50,
-      "efficiency": 3,
+      "efficiency": 1,
       "size": 10
     },
     {
@@ -32,7 +23,7 @@
       "id": 2,
       "x": 50,
       "y": 150,
-      "efficiency": 1,
+      "efficiency": 3,
       "size": 10
     },
     {

@@ -1,9 +1,5 @@
 {
-  "players": [
-    { "id": 0, "name": "0" },
-    { "id": 1, "name": "1" },
-    { "id": 2, "name": "2" }
-  ],
+  "playerCount": 3,
   "board": {
     "width": 200,
     "height": 200

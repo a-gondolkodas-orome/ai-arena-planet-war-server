@@ -44,14 +44,14 @@ export type Tick = t.TypeOf<typeof tickCodec>;
 export type TickVisualizer = {
   planets: {
     id: PlanetID;
-    player: PlayerID | null;
+    player: string | null;
     population: number; // It can also have population without player
   }[];
   troops: {
     id: number;
     from: PlanetID;
     to: PlanetID;
-    player: PlayerID;
+    player: string;
     size: number;
     distance: number;
     progress: number;
@@ -63,7 +63,7 @@ export type TickVisualizer = {
 // from, to, size
 
 export const gameStateCodec = t.type({
-  players: t.array(playerCodec),
+  playerCount: t.number,
   board: t.type({ width: t.number, height: t.number }),
   planets: t.array(planetCodec),
   planetsDistances: t.array(t.array(t.number)),
@@ -73,14 +73,14 @@ export type GameState = t.TypeOf<typeof gameStateCodec>;
 
 export type GameStateVis = {
   init: {
-    players: Player[];
+    players: string[];
     board: { width: number; height: number };
     planets: {
       id: PlanetID;
       x: number;
       y: number;
       size: number;
-      player: PlayerID | null;
+      player: string | null;
     }[];
   };
   ticks: TickVisualizer[];
