@@ -9,7 +9,7 @@
   },
   "mapsFolderPath": "./maps",
   "packageServer": {
-    "command": "./package_server.sh",
+    "command": "chmod +x ./package_server.sh && ./package_server.sh",
     "result": "./planet-war-server.zip"
   }
 }
