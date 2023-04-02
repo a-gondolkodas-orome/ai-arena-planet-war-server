@@ -8,7 +8,8 @@
     "rootDir": "src",
     "sourceMap": true,
     "target": "ES6",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "lib": ["ES2021"]
   },
   "include": ["src"]
 }

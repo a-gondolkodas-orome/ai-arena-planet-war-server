@@ -21,6 +21,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "io-ts": "^2.2.20"
+  },
   "devDependencies": {
     "@types/node": "^18.11.7",
     "@typescript-eslint/eslint-plugin": "^5.38.0",
@@ -28,11 +31,6 @@
     "eslint": "^8.23.1",
     "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.7.1",
-    "queue-typescript": "^1.0.1",
     "typescript": "^4.8.4"
-  },
-  "dependencies": {
-    "childprocess": "^2.0.2",
-    "io-ts": "^2.2.20"
   }
 }

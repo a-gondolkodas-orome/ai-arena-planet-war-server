@@ -1,5 +1,4 @@
-import { ChildProcess, spawn } from "node:child_process";
-import { Queue } from "queue-typescript";
+import { ChildProcess, spawn } from "child_process";
 import { BotConfig } from "./types";
 
 export enum ErrorCode {
@@ -18,8 +17,8 @@ export class Bot {
   error_code: ErrorCode;
   active: boolean;
   process: ChildProcess;
-  std_out: Queue<string>;
-  std_err: Queue<string>;
+  std_out: string[] = [];
+  std_err: string[] = [];
   available_time: number;
 
   private static readonly starting_available_time: number = 1000; // in ms
@@ -28,8 +27,6 @@ export class Bot {
   public constructor(public id: string, command: string) {
     this.active = true;
     this.error_code = ErrorCode.Success;
-    this.std_out = new Queue<string>();
-    this.std_err = new Queue<string>();
     this.available_time = Bot.starting_available_time;
 
     this.process = spawn(`${command}`, []);
@@ -39,7 +36,7 @@ export class Bot {
     });
 
     this.process.stdout.on("data", this.processData.bind(this));
-    this.process.stderr.on("data", (data) => this.std_err.enqueue(data));
+    this.process.stderr.on("data", (data) => this.std_err.push(data));
 
     this.process.on("close", () => {
       this.active = false;
@@ -59,7 +56,7 @@ export class Bot {
       .split("\n")
       .map((s: string) => s.trim())
       .filter((s: string) => s !== "")
-      .forEach((s: string) => this.std_out.enqueue(s));
+      .forEach((s: string) => this.std_out.push(s));
   }
 
   public send(message: string): Promise<void> {
@@ -96,9 +93,7 @@ export class Bot {
     }
 
     if (this.std_out.length >= number_of_lines) {
-      const data: string = Array.from({ length: number_of_lines }, () =>
-        this.std_out.dequeue(),
-      ).join("\n");
+      const data: string = this.std_out.join("\n");
       return { id: this.id, data };
     } else {
       // TLE
@@ -117,7 +112,7 @@ export class Bot {
   }
 
   public debug(): void {
-    console.log(this.std_out.toArray());
+    console.log(this.std_out);
   }
 }
 
