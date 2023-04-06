@@ -1,5 +1,6 @@
 import { ChildProcess, spawn } from "child_process";
 import { BotConfig } from "./types";
+import { Writable } from "stream";
 
 export enum ErrorCode {
   Success,
@@ -10,7 +11,7 @@ export enum ErrorCode {
 
 export class Data {
   id: string;
-  data?: string;
+  data: string | null;
 }
 
 export class Bot {
@@ -20,6 +21,7 @@ export class Bot {
   std_out: string[] = [];
   std_err: string[] = [];
   available_time: number;
+  stdin: Writable;
 
   private static readonly starting_available_time: number = 1000; // in ms
   private static readonly plus_time_per_round: number = 1000; // in ms
@@ -35,6 +37,10 @@ export class Bot {
       this.error_code = ErrorCode.UnexpectedExitOfCode;
     });
 
+    if (!this.process.stdin || !this.process.stdout || !this.process.stderr) {
+      throw new Error("process IO not not piped");
+    }
+    this.stdin = process.stdin;
     this.process.stdout.on("data", this.processData.bind(this));
     this.process.stderr.on("data", (data) => this.std_err.push(data));
 
@@ -63,7 +69,7 @@ export class Bot {
     if (!this.active) return Promise.resolve();
 
     return new Promise<void>((resolve, reject) => {
-      this.process.stdin.write(message + "\n", (err) => {
+      this.stdin.write(message + "\n", (err) => {
         if (err) {
           console.log("error writing", err);
           reject(err);
@@ -71,7 +77,7 @@ export class Bot {
           resolve();
         }
       });
-      this.process.stdin.emit("drain");
+      this.stdin.emit("drain");
     });
   }
 
@@ -107,7 +113,7 @@ export class Bot {
   }
 
   public stop() {
-    this.process.stdin.end();
+    this.stdin.end();
     this.kill();
   }
 

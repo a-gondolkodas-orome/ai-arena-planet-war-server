@@ -10,6 +10,7 @@ import {
 import * as fs from "fs";
 import { decodeJson } from "./codec";
 import { matchConfigCodec } from "./common";
+import { notNull } from "./utils";
 
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
@@ -48,9 +49,11 @@ async function makeMatch(state: GameState, bots: BotPool) {
       // TODO: it's game specific
       const firstAnswer = await workingBots[i].ask();
       //console.log("firstAnswer:", firstAnswer);
+      if (firstAnswer.data === null) continue;
       const numberOfMove = myParseInt(firstAnswer.data, { min: 0, max: 100 });
       //console.log(firstAnswer.data);
       const answer = await workingBots[i].ask(numberOfMove);
+      if (answer.data === null) continue;
       if (numberOfMove !== 0) {
         console.log("send:", answer);
       }
@@ -360,10 +363,10 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
   const lastTick = stateVis.ticks[stateVis.ticks.length - 1];
   for (const planet of lastTick.planets)
     if (planet.player) {
-      score.set(planet.player, score.get(planet.player) + planet.population);
+      score.set(planet.player, notNull(score.get(planet.player)) + planet.population);
     }
   for (const troop of lastTick.troops)
-    score.set(troop.player, score.get(troop.player) + troop.size);
+    score.set(troop.player, notNull(score.get(troop.player)) + troop.size);
   fs.writeFileSync(
     "score.json",
     JSON.stringify(Object.fromEntries(score.entries()), undefined, 2),
