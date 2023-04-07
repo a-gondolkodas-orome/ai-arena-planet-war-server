@@ -56,6 +56,12 @@ export type TickVisualizer = {
     distance: number;
     progress: number;
   }[];
+  messages: {
+    [key: string]: {
+      received: { message: string; timestamp: number }[];
+      sent: { message: string; timestamp: number }[];
+    };
+  };
   //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
 };
 

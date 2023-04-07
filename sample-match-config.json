@@ -7,7 +7,7 @@
     },
     {
       "id": "bot2",
-      "runCommand": "bots/win_bot.out"
+      "runCommand": "bots/idle_bot.out"
     }
   ]
 }

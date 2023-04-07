@@ -14,6 +14,13 @@ import { notNull } from "./utils";
 
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
+const botCommLog = new Map<
+  string,
+  {
+    received: { message: string; timestamp: number }[];
+    sent: { message: string; timestamp: number }[];
+  }
+>();
 
 if (process.argv.length < 3) {
   console.error("Provide the path to a match config file as command line parameter");
@@ -30,42 +37,21 @@ makeMatch(map, bots).catch((error) => console.error(error));
 // TODOS: bot.doStep(state)
 
 async function makeMatch(state: GameState, bots: BotPool) {
+  console.log("starting match at", new Date().toLocaleString());
   const workingBots = await testingBots(state, bots);
   for (let i = 0; i < workingBots.length; i++) {
-    // Todo: workingbots.bots is ugly
-    console.log("sending starting pos to bot " + i);
-    await workingBots[i].send(startingPosToString(state, i));
+    await sendMessage(workingBots[i], startingPosToString(state, i));
   }
   let isThereAliveBot = true;
   tickToVisualizer(bots, state); // Save for visualizer
   while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 100) {
-    console.log(state.tick.id, state.tick.planets);
+    console.log(`${formatTime()}: tick #${state.tick.id}`);
+    console.log(state.tick.planets);
     state.tick.id++;
     const userSteps: UserStep[] = [];
     for (let i = 0; i < workingBots.length; i++) {
-      //console.log(tickToString(state, i));
-      await workingBots[i].send(tickToString(state));
-
-      // TODO: it's game specific
-      const firstAnswer = await workingBots[i].ask();
-      //console.log("firstAnswer:", firstAnswer);
-      if (firstAnswer.data === null) continue;
-      const numberOfMove = myParseInt(firstAnswer.data, { min: 0, max: 100 });
-      //console.log(firstAnswer.data);
-      const answer = await workingBots[i].ask(numberOfMove);
-      if (answer.data === null) continue;
-      if (numberOfMove !== 0) {
-        console.log("send:", answer);
-      }
-      //console.log(i, answer.data)
-
-      const validatedStep = validateStep(state, i, numberOfMove, answer.data);
-      if ("error" in validatedStep) {
-        console.log("ERROR!!!", validatedStep.error);
-        userSteps.push([]);
-      } else {
-        userSteps.push(validatedStep);
-      }
+      await sendMessage(workingBots[i], tickToString(state));
+      userSteps.push(await getUserSteps(workingBots[i], state, i));
     }
     state = updateState(state, userSteps);
 
@@ -77,25 +63,40 @@ async function makeMatch(state: GameState, bots: BotPool) {
     if (playersAlive.length < 2) isThereAliveBot = false;
     tickToVisualizer(bots, state); // Save for visualizer
   }
-  console.log(
-    state.tick.id,
-    state.tick.planets[0],
-    state.tick.planets[1],
-    state.tick.planets[2],
-    state.tick.planets[3],
-    state.tick.planets[4],
-    state.tick.planets[5],
-  );
-  console.log("ENDED");
+  console.log(`${formatTime()} match finished`);
   stateToVisualizer(bots, state);
   await bots.stopAll();
 }
 
-async function testingBots(state: GameState, bots: BotPool): Promise<Bot[]> {
-  await bots.sendAll("START");
-  const botAnswers = await bots.askAll();
-  console.log(botAnswers);
-  return bots.bots.filter((bot, index) => botAnswers[index].data === "OK");
+async function getUserSteps(bot: Bot, state: GameState, playerId: number) {
+  const firstAnswer = await receiveMessage(bot);
+  //console.log("firstAnswer:", firstAnswer);
+  if (firstAnswer.data === null) return [];
+  const numberOfMove = myParseInt(firstAnswer.data, { min: 0, max: 100 });
+  if (numberOfMove === 0) return [];
+  //console.log(firstAnswer.data);
+  const answer = await receiveMessage(bot, numberOfMove);
+  if (answer.data === null) return [];
+  //console.log(i, answer.data)
+
+  const validatedStep = validateStep(state, playerId, numberOfMove, answer.data);
+  if ("error" in validatedStep) {
+    console.log("ERROR!!!", validatedStep.error);
+    return [];
+  } else {
+    return validatedStep;
+  }
+}
+
+async function testingBots(state: GameState, bots: BotPool) {
+  const workingBots = [];
+  for (const bot of bots.bots) {
+    await sendMessage(bot, "START");
+    if ((await receiveMessage(bot, 1)).data === "OK") {
+      workingBots.push(bot);
+    }
+  }
+  return workingBots;
 }
 
 function startingPosToString(state: GameState, player: PlayerID): string {
@@ -337,7 +338,9 @@ function tickToVisualizer(botPool: BotPool, state: GameState): void {
         progress: state.planetsDistances[troop.from][troop.to] - troop.endTick + state.tick.id,
       };
     }),
+    messages: Object.fromEntries(botCommLog),
   });
+  botCommLog.clear();
 }
 
 function stateToVisualizer(botPool: BotPool, state: GameState): void {
@@ -374,6 +377,31 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
   );
 }
 
+async function sendMessage(bot: Bot, message: string) {
+  await bot.send(message);
+  const now = new Date();
+  console.log(`${formatTime(now)}: ${bot.id} received\n${message}`);
+  let commLog = botCommLog.get(bot.id);
+  if (!commLog) {
+    botCommLog.set(bot.id, (commLog = { received: [], sent: [] }));
+  }
+  commLog.received.push({ message, timestamp: now.getTime() });
+}
+
+async function receiveMessage(bot: Bot, numberOfLines?: number) {
+  const message = await bot.ask(numberOfLines);
+  const now = new Date();
+  console.log(`${formatTime(now)}: ${bot.id} sent\n${message.data}`);
+  if (message.data !== null) {
+    let commLog = botCommLog.get(bot.id);
+    if (!commLog) {
+      botCommLog.set(bot.id, (commLog = { received: [], sent: [] }));
+    }
+    commLog.sent.push({ message: message.data, timestamp: now.getTime() });
+  }
+  return message;
+}
+
 // Note: It accepts "4.0" or "4.", but does not accept "4.2"
 function myParseInt(
   value: string,
@@ -387,4 +415,8 @@ function myParseInt(
     throw new Error(`Invalid number: ${value}`);
   }
   return defaultValue;
+}
+
+function formatTime(date: Date = new Date()) {
+  return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}.${date.getMilliseconds()}`;
 }

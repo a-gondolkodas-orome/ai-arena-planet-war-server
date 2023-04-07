@@ -40,7 +40,7 @@ export class Bot {
     if (!this.process.stdin || !this.process.stdout || !this.process.stderr) {
       throw new Error("process IO not not piped");
     }
-    this.stdin = process.stdin;
+    this.stdin = this.process.stdin;
     this.process.stdout.on("data", this.processData.bind(this));
     this.process.stderr.on("data", (data) => this.std_err.push(data));
 
@@ -99,7 +99,7 @@ export class Bot {
     }
 
     if (this.std_out.length >= number_of_lines) {
-      const data: string = this.std_out.join("\n");
+      const data: string = this.std_out.splice(0, number_of_lines).join("\n");
       return { id: this.id, data };
     } else {
       // TLE
