@@ -8,7 +8,15 @@ using namespace std;
 
 void respond()
 {
-    cout << 0 << endl;
+    // Test some invalid moves
+    if (tick % 20 == 0) {
+        cout << -1 << endl;
+    } else if (tick % 20 == 10) {
+        cout << 1 << endl;
+        cout << "-1 1 1\n";
+    } else {
+        cout << 0 << endl;
+    }
 }
 
 

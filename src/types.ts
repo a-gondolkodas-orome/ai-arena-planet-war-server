@@ -41,6 +41,12 @@ export const tickCodec = t.type({
 });
 export type Tick = t.TypeOf<typeof tickCodec>;
 
+export type TickCommLog = {
+  received: { message: string; timestamp: number }[];
+  sent: { message: string; timestamp: number }[];
+  commandError?: string;
+};
+
 export type TickVisualizer = {
   planets: {
     id: PlanetID;
@@ -57,10 +63,7 @@ export type TickVisualizer = {
     progress: number;
   }[];
   messages: {
-    [key: string]: {
-      received: { message: string; timestamp: number }[];
-      sent: { message: string; timestamp: number }[];
-    };
+    [key: string]: TickCommLog;
   };
   //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
 };

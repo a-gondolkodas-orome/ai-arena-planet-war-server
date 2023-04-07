@@ -6,6 +6,7 @@ import {
   GameStateVis,
   UserStep,
   gameStateCodec,
+  TickCommLog,
 } from "./types";
 import * as fs from "fs";
 import { decodeJson } from "./codec";
@@ -14,13 +15,7 @@ import { notNull } from "./utils";
 
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
-const botCommLog = new Map<
-  string,
-  {
-    received: { message: string; timestamp: number }[];
-    sent: { message: string; timestamp: number }[];
-  }
->();
+const botCommLog = new Map<string, TickCommLog>();
 
 if (process.argv.length < 3) {
   console.error("Provide the path to a match config file as command line parameter");
@@ -45,9 +40,9 @@ async function makeMatch(state: GameState, bots: BotPool) {
   let isThereAliveBot = true;
   tickToVisualizer(bots, state); // Save for visualizer
   while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 100) {
+    state.tick.id++;
     console.log(`${formatTime()}: tick #${state.tick.id}`);
     console.log(state.tick.planets);
-    state.tick.id++;
     const userSteps: UserStep[] = [];
     for (let i = 0; i < workingBots.length; i++) {
       await sendMessage(workingBots[i], tickToString(state));
@@ -72,16 +67,22 @@ async function getUserSteps(bot: Bot, state: GameState, playerId: number) {
   const firstAnswer = await receiveMessage(bot);
   //console.log("firstAnswer:", firstAnswer);
   if (firstAnswer.data === null) return [];
-  const numberOfMove = myParseInt(firstAnswer.data, { min: 0, max: 100 });
-  if (numberOfMove === 0) return [];
+  let numberOfMoves;
+  try {
+    numberOfMoves = myParseInt(firstAnswer.data, { min: 0, max: 100, throwError: true });
+  } catch {
+    setCommandError(bot, "Expected the number of commands, but received: " + firstAnswer.data);
+    return [];
+  }
+  if (numberOfMoves === 0) return [];
   //console.log(firstAnswer.data);
-  const answer = await receiveMessage(bot, numberOfMove);
+  const answer = await receiveMessage(bot, numberOfMoves);
   if (answer.data === null) return [];
   //console.log(i, answer.data)
 
-  const validatedStep = validateStep(state, playerId, numberOfMove, answer.data);
+  const validatedStep = validateStep(state, playerId, numberOfMoves, answer.data);
   if ("error" in validatedStep) {
-    console.log("ERROR!!!", validatedStep.error);
+    setCommandError(bot, validatedStep.error);
     return [];
   } else {
     return validatedStep;
@@ -204,13 +205,13 @@ function validateStep(
           error: "Invalid step! You can't send troops from one planet to another more than once.",
         };
       }
-      fromTo.add(from.toString() + "_" + to.toString()); // Little bit ugly
+      fromTo.add(from.toString() + "_" + to.toString());
       troops.push({ playerID, from, to, size });
     }
     return troops;
   } catch (e) {
-    console.log(e);
-    return { error: "Invalid input" }; // TODO: better error message
+    console.error(e);
+    return { error: "Error while processing input: " + e.message };
   }
 }
 
@@ -281,7 +282,6 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
         max2 = { who: i, size: sizes[i] };
       }
     }
-    //console.log("Maxok:", max, max2)
     // Determine the winner, update the planet
     if (max.size === max2.size) {
       state.tick.planets[i].player = null;
@@ -400,6 +400,15 @@ async function receiveMessage(bot: Bot, numberOfLines?: number) {
     commLog.sent.push({ message: message.data, timestamp: now.getTime() });
   }
   return message;
+}
+
+function setCommandError(bot: Bot, error: string) {
+  let commLog = botCommLog.get(bot.id);
+  if (!commLog) {
+    botCommLog.set(bot.id, (commLog = { received: [], sent: [] }));
+  }
+  commLog.commandError = error;
+  console.log(`${bot.id} command error: ${error}`);
 }
 
 // Note: It accepts "4.0" or "4.", but does not accept "4.2"
