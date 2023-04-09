@@ -323,7 +323,7 @@ function tickToVisualizer(botPool: BotPool, state: GameState): void {
     planets: state.tick.planets.map((planet) => {
       return {
         id: planet.id,
-        player: planet.player === null ? null : botPool.bots[planet.player.id].id,
+        player: planet.player === null ? null : planet.player.id,
         population: planet.population,
       };
     }),
@@ -332,7 +332,7 @@ function tickToVisualizer(botPool: BotPool, state: GameState): void {
         id: troop.id,
         from: troop.from,
         to: troop.to,
-        player: botPool.bots[troop.player].id,
+        player: troop.player,
         size: troop.size,
         distance: state.planetsDistances[troop.from][troop.to],
         progress: state.planetsDistances[troop.from][troop.to] - troop.endTick + state.tick.id,
@@ -356,20 +356,23 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
           player: tickLog[0].planets[planet.id].player,
         };
       }),
-      players: botPool.bots.map((bot) => bot.id),
+      players: matchConfig.bots.map((bot, index) => ({ id: index, name: bot.id })),
     },
     ticks: tickLog,
   };
   fs.writeFileSync("match.log", JSON.stringify(stateVis, undefined, 2), "utf8");
   const score = new Map<string, number>();
-  for (const player of stateVis.init.players) score.set(player, 0);
+  for (const player of stateVis.init.players) score.set(player.name, 0);
   const lastTick = stateVis.ticks[stateVis.ticks.length - 1];
   for (const planet of lastTick.planets)
     if (planet.player) {
-      score.set(planet.player, notNull(score.get(planet.player)) + planet.population);
+      const playerId = botPool.bots[planet.player].id;
+      score.set(playerId, notNull(score.get(playerId)) + planet.population);
     }
-  for (const troop of lastTick.troops)
-    score.set(troop.player, notNull(score.get(troop.player)) + troop.size);
+  for (const troop of lastTick.troops) {
+    const playerId = botPool.bots[troop.player].id;
+    score.set(playerId, notNull(score.get(playerId)) + troop.size);
+  }
   fs.writeFileSync(
     "score.json",
     JSON.stringify(Object.fromEntries(score.entries()), undefined, 2),

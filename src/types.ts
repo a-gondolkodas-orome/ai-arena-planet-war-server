@@ -50,14 +50,14 @@ export type TickCommLog = {
 export type TickVisualizer = {
   planets: {
     id: PlanetID;
-    player: string | null;
+    player: number | null;
     population: number; // It can also have population without player
   }[];
   troops: {
     id: number;
     from: PlanetID;
     to: PlanetID;
-    player: string;
+    player: number;
     size: number;
     distance: number;
     progress: number;
@@ -82,14 +82,14 @@ export type GameState = t.TypeOf<typeof gameStateCodec>;
 
 export type GameStateVis = {
   init: {
-    players: string[];
+    players: { id: number; name: string }[];
     board: { width: number; height: number };
     planets: {
       id: PlanetID;
       x: number;
       y: number;
       size: number;
-      player: string | null;
+      player: number | null;
     }[];
   };
   ticks: TickVisualizer[];
