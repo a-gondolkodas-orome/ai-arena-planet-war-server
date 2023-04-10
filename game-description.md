@@ -1,4 +1,6 @@
-# Planet War
+## Példa kód
+
+<a href="/public/games/planet-war/planet_war_bot.cpp" download>planet_war_bot.cpp</a>
 
 ## Játékszabályok
 
