@@ -15,7 +15,7 @@ import { notNull } from "./utils";
 
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
-const botCommLog = new Map<string, TickCommLog>();
+const botCommLog = new Map<number, TickCommLog>();
 
 if (process.argv.length < 3) {
   console.error("Provide the path to a match config file as command line parameter");
@@ -356,16 +356,16 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
           player: tickLog[0].planets[planet.id].player,
         };
       }),
-      players: matchConfig.bots.map((bot, index) => ({ id: index, name: bot.id })),
+      players: matchConfig.bots.map((bot, index) => ({ id: bot.id, name: bot.name, index })),
     },
     ticks: tickLog,
   };
   fs.writeFileSync("match.log", JSON.stringify(stateVis, undefined, 2), "utf8");
   const score = new Map<string, number>();
-  for (const player of stateVis.init.players) score.set(player.name, 0);
+  for (const player of stateVis.init.players) score.set(player.id, 0);
   const lastTick = stateVis.ticks[stateVis.ticks.length - 1];
   for (const planet of lastTick.planets)
-    if (planet.player) {
+    if (planet.player !== null) {
       const playerId = botPool.bots[planet.player].id;
       score.set(playerId, notNull(score.get(playerId)) + planet.population);
     }
@@ -383,10 +383,10 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
 async function sendMessage(bot: Bot, message: string) {
   await bot.send(message);
   const now = new Date();
-  console.log(`${formatTime(now)}: ${bot.id} received\n${message}`);
-  let commLog = botCommLog.get(bot.id);
+  console.log(`${formatTime(now)}: ${bot.id} (#${bot.index}) received\n${message}`);
+  let commLog = botCommLog.get(bot.index);
   if (!commLog) {
-    botCommLog.set(bot.id, (commLog = { received: [], sent: [] }));
+    botCommLog.set(bot.index, (commLog = { received: [], sent: [] }));
   }
   commLog.received.push({ message, timestamp: now.getTime() });
 }
@@ -394,11 +394,11 @@ async function sendMessage(bot: Bot, message: string) {
 async function receiveMessage(bot: Bot, numberOfLines?: number) {
   const message = await bot.ask(numberOfLines);
   const now = new Date();
-  console.log(`${formatTime(now)}: ${bot.id} sent\n${message.data}`);
+  console.log(`${formatTime(now)}: ${bot.id} (#${bot.index}) sent\n${message.data}`);
   if (message.data !== null) {
-    let commLog = botCommLog.get(bot.id);
+    let commLog = botCommLog.get(bot.index);
     if (!commLog) {
-      botCommLog.set(bot.id, (commLog = { received: [], sent: [] }));
+      botCommLog.set(bot.index, (commLog = { received: [], sent: [] }));
     }
     commLog.sent.push({ message: message.data, timestamp: now.getTime() });
   }
@@ -406,12 +406,12 @@ async function receiveMessage(bot: Bot, numberOfLines?: number) {
 }
 
 function setCommandError(bot: Bot, error: string) {
-  let commLog = botCommLog.get(bot.id);
+  let commLog = botCommLog.get(bot.index);
   if (!commLog) {
-    botCommLog.set(bot.id, (commLog = { received: [], sent: [] }));
+    botCommLog.set(bot.index, (commLog = { received: [], sent: [] }));
   }
   commLog.commandError = error;
-  console.log(`${bot.id} command error: ${error}`);
+  console.log(`${bot.id} (#${bot.index}) command error: ${error}`);
 }
 
 // Note: It accepts "4.0" or "4.", but does not accept "4.2"

@@ -2,11 +2,13 @@
   "map": "maps/map1.json",
   "bots": [
     {
-      "id": "bot1",
+      "id": "abcd1234",
+      "name": "bot1",
       "runCommand": "bots/win_bot.out"
     },
     {
-      "id": "bot2",
+      "id": "1234abcd",
+      "name": "bot2",
       "runCommand": "bots/idle_bot.out"
     }
   ]

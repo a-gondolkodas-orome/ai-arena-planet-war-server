@@ -26,7 +26,7 @@ export class Bot {
   private static readonly starting_available_time: number = 1000; // in ms
   private static readonly plus_time_per_round: number = 1000; // in ms
 
-  public constructor(public id: string, command: string) {
+  public constructor(readonly id: string, readonly index: number, command: string) {
     this.active = true;
     this.error_code = ErrorCode.Success;
     this.available_time = Bot.starting_available_time;
@@ -126,7 +126,7 @@ export class BotPool {
   public bots: Bot[];
 
   public constructor(bot_configs: BotConfig[]) {
-    this.bots = bot_configs.map(({ id, runCommand }) => new Bot(id, runCommand));
+    this.bots = bot_configs.map(({ id, runCommand }, index) => new Bot(id, index, runCommand));
   }
 
   public sendAll(message: string): Promise<void[]> {

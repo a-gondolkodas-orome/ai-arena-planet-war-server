@@ -63,7 +63,7 @@ export type TickVisualizer = {
     progress: number;
   }[];
   messages: {
-    [key: string]: TickCommLog;
+    [key: number]: TickCommLog;
   };
   //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
 };
@@ -82,7 +82,7 @@ export type GameState = t.TypeOf<typeof gameStateCodec>;
 
 export type GameStateVis = {
   init: {
-    players: { id: number; name: string }[];
+    players: { id: string; name: string; index: number }[];
     board: { width: number; height: number };
     planets: {
       id: PlanetID;
