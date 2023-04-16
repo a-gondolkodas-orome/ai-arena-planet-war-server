@@ -7,7 +7,24 @@
     "min": 2,
     "max": 6
   },
-  "mapsFolderPath": "./maps",
+  "maps": [
+    {
+      "name": "map2-1",
+      "path": "./maps/map2-1.json",
+      "playerCount": {
+        "min": 2,
+        "max": 2
+      }
+    },
+    {
+      "name": "map2-2",
+      "path": "./maps/map2-2.json",
+      "playerCount": {
+        "min": 2,
+        "max": 2
+      }
+    }
+  ],
   "packageServer": {
     "command": "chmod +x ./package_server.sh && ./package_server.sh",
     "result": "./planet-war-server.zip"
