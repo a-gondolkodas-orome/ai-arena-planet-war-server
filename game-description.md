@@ -90,7 +90,7 @@ Egységek adatai (_T_ sor):\
 A csapatok adatai (_T_ sor)\
 `from`, `to`, `count`\
 `from`, `to`: _planetID_ - egész számok, a küldött egységek kiindulási helye és célja (csak saját bolygóról lehet küldeni)\
-`count`: egész, a küldött egységek száma
+`count`: pozitív egész, a küldött egységek száma
 
 Figyelem, egy (_from_, _to_) párost csak egyszer küldhettek el egy körön (ticken) belül a szervernek.
 Ha ezt megszegitek, hibát kaptok és abban a körben nem léphettek.

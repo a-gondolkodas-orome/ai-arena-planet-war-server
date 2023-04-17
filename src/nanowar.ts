@@ -205,6 +205,11 @@ function validateStep(
           error: "Invalid step! You can't send troops from one planet to another more than once.",
         };
       }
+      if (size <= 0) {
+        return {
+          error: "Invalid step! The sent army size must be positive.",
+        };
+      }
       fromTo.add(from.toString() + "_" + to.toString());
       troops.push({ playerID, from, to, size });
     }
