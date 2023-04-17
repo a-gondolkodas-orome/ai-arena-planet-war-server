@@ -6,6 +6,7 @@ int my_player_id;
 int P;
 
 struct Planet {
+  int id;
   int x, y;
   int efficiency;
   int player_id;
@@ -33,6 +34,7 @@ void initialize() {
 
   planets.resize(P);
   for (int i = 0; i < P; ++i) {
+    planets[i].id = i;
     cin >> planets[i].x >> planets[i].y >> planets[i].efficiency;
   }
 
@@ -83,8 +85,8 @@ int main() {
   initialize();
   while (read_tick()) {
     send_troops.clear();
-    for (int p1 = 0; p1 < planets.size(); p1++) {
-      if (planets[p1].player_id != my_player_id || planets[p1].population < 30)
+    for (Planet &planet : planets) {
+      if (planet.player_id != my_player_id || planet.population < 30)
         continue;
       int attack_planet = -1;
       for (int p2 = 0; p2 < planets.size(); p2++) {
@@ -93,8 +95,8 @@ int main() {
       }
       if (attack_planet != -1) {
         int unit_count = 10;
-        send_troops.push_back({p1, attack_planet, unit_count});
-        planets[p1].population -= unit_count;
+        send_troops.push_back({planet.id, attack_planet, unit_count});
+        planet.population -= unit_count;
       }
     }
 
