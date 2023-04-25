@@ -10,35 +10,35 @@
       "x": 50,
       "y": 50,
       "efficiency": 1,
-      "size": 10
+      "size": 5
     },
     {
       "id": 1,
       "x": 150,
       "y": 150,
       "efficiency": 1,
-      "size": 10
+      "size": 5
     },
     {
       "id": 2,
       "x": 50,
       "y": 150,
       "efficiency": 3,
-      "size": 10
+      "size": 5
     },
     {
       "id": 3,
       "x": 150,
       "y": 50,
       "efficiency": 1,
-      "size": 10
+      "size": 5
     },
     {
       "id": 4,
       "x": 100,
       "y": 100,
       "efficiency": 5,
-      "size": 20
+      "size": 15
     }
   ],
   "planetsDistances": [
