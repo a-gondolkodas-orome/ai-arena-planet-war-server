@@ -284,9 +284,9 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     for (let i = 0; i < state.playerCount + 1; i++) {
       if (sizes[i] > max.size) {
         max2 = max;
-        max = { who: i, size: sizes[i] };
+        max = { who: i === state.playerCount ? null : i, size: sizes[i] };
       } else if (sizes[i] > max2.size) {
-        max2 = { who: i, size: sizes[i] };
+        max2 = { who: i === state.playerCount ? null : i, size: sizes[i] };
       }
     }
     // Determine the winner, update the planet

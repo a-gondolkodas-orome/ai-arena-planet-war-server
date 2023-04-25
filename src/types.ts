@@ -48,6 +48,7 @@ export type TickCommLog = {
 };
 
 export type TickVisualizer = {
+  tick: number;
   planets: {
     id: PlanetID;
     player: number | null;
