@@ -48,6 +48,7 @@ async function makeMatch(state: GameState, bots: BotPool) {
       await sendMessage(workingBots[i], tickToString(state));
       userSteps.push(await getUserSteps(workingBots[i], state, i));
     }
+    tickToVisualizer(bots, state); // Save for visualizer
     state = updateState(state, userSteps);
 
     const playersAlive = Array.from(
@@ -56,7 +57,6 @@ async function makeMatch(state: GameState, bots: BotPool) {
       ),
     );
     if (playersAlive.length < 2) isThereAliveBot = false;
-    tickToVisualizer(bots, state); // Save for visualizer
   }
   console.log(`${formatTime()} match finished`);
   stateToVisualizer(bots, state);
@@ -241,17 +241,19 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     Array(state.planets.length),
     () => [],
   ); // TODO: use dictionary instead of array
+  let someoneArrived = false;
   for (let i = 0; i < state.tick.troops.length; i++) {
     if (state.tick.troops[i].endTick === state.tick.id) {
       const planet = state.tick.troops[i].to;
       const user = { who: state.tick.troops[i].player, size: state.tick.troops[i].size };
       // Add planets to
       planetWaitingList[planet].push(user);
-      console.log("Arrived:", planetWaitingList);
       state.tick.troops.splice(i, 1); // Removing troop from list
       i--;
+      someoneArrived = true;
     }
   }
+  if (someoneArrived) console.log("Arrived:", planetWaitingList);
   // FIGHT!
   for (let i = 0; i < planetWaitingList.length; i++) {
     // i = planetID
@@ -325,6 +327,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
 
 function tickToVisualizer(botPool: BotPool, state: GameState): void {
   tickLog.push({
+    tick: state.tick.id,
     planets: state.tick.planets.map((planet) => {
       return {
         id: planet.id,
