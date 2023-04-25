@@ -13,6 +13,8 @@ import { decodeJson } from "./codec";
 import { matchConfigCodec } from "./common";
 import { notNull } from "./utils";
 
+const BOT_LOG__MAX_LENGTH = 2000;
+
 let troopIDCounter = 0;
 const tickLog: TickVisualizer[] = [];
 const botCommLog = new Map<number, TickCommLog>();
@@ -47,6 +49,14 @@ async function makeMatch(state: GameState, bots: BotPool) {
     for (let i = 0; i < workingBots.length; i++) {
       await sendMessage(workingBots[i], tickToString(state));
       userSteps.push(await getUserSteps(workingBots[i], state, i));
+      let botLog = workingBots[i].std_err.join("\n");
+      workingBots[i].std_err = [];
+      if (botLog.length > BOT_LOG__MAX_LENGTH) {
+        botLog = botLog.substring(0, BOT_LOG__MAX_LENGTH) + "...\n[[bot log trimmed to 2KB]]";
+      }
+      const commLog = botCommLog.get(workingBots[i].index);
+      if (!commLog) throw new Error("makeMatch: bot commLog not found");
+      commLog.botLog = botLog || undefined;
     }
     tickToVisualizer(bots, state); // Save for visualizer
     state = updateState(state, userSteps);
@@ -166,6 +176,7 @@ function validateStep(
     const lines = input.split("\n");
     const troops: UserStep = [];
     const fromTo = new Set<string>();
+    const sumTroopsFromPlanet = new Array(state.planets.length).fill(0);
     for (let i = 0; i < numberOfTroops; i++) {
       let [from, to, size] = [0, 0, 0];
       try {
@@ -197,9 +208,10 @@ function validateStep(
       if (planetPlayer.id !== playerID) {
         return { error: "Invalid planet! Planet is owned by other player." }; // TODO: insert planet number and owner number
       }
-      if (state.tick.planets[from].population < size) {
+      if (state.tick.planets[from].population < sumTroopsFromPlanet[from] + size) {
         return { error: "Invalid size! You don't have enough troops." };
       }
+      sumTroopsFromPlanet[from] += size;
       if (fromTo.has(from.toString() + "_" + to.toString())) {
         return {
           error: "Invalid step! You can't send troops from one planet to another more than once.",

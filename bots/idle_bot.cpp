@@ -10,7 +10,10 @@ void respond()
 {
     // Test some invalid moves
     if (tick % 20 == 0) {
+        cerr << "Timing out..." << endl;
+        cerr << "in multiple lines" << endl;
         cout << -1 << endl;
+        return;
     } else if (tick % 20 == 10) {
         cout << 1 << endl;
         cout << "-1 1 1\n";
