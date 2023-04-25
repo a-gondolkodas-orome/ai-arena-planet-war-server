@@ -25,6 +25,16 @@
       }
     }
   ],
+  "bots": [
+    {
+      "name": "Test Bot (easy)",
+      "path": "bots/test-bot-easy.cpp"
+    },
+    {
+      "name": "Test Bot (hard)",
+      "path": "bots/test-bot-hard.zip"
+    }
+  ],
   "packageServer": {
     "command": "chmod +x ./package_server.sh && ./package_server.sh",
     "result": "./planet-war-server.zip"
