@@ -63,7 +63,8 @@ Minden bolygóra (_P_ sor):\
 A bolygókat _0_-tól _P-1_-ig számozzuk (később planetID), az _i_. sor az _i_ sorszámú bolygó adatait tartalmazza.
 
 Minden bolygó-párra (_P\*P_-s szimmetrikus mátrix):\
-`distance[i][j]` : egész szám, az _i_. és _j_. bolygó között ennyi körig tart az utazás. (mindkét irányban ugyanannyi)
+`distance[i][j]` : egész szám, az _i_. és _j_. bolygó között ennyi körig tart az utazás (mindkét irányban ugyanannyi).
+Ha a _t_. tickben küldtök egységeket az _i_. bolygóról a _j_.-re, akkor azok a _t+distance[i][j]_. tickben fognak megérkezni, és potenciálisan harcolni.
 
 ### Körönkénti üzenetek
 
@@ -81,7 +82,7 @@ Egységek adatai (_T_ sor):\
 `playerID`: egész, a játékos azonosítója\
 `from`, `to`: _planetID_ - egész számok, a küldött egységek kiindulási helye és célja (csak saját bolygóról lehet küldeni)\
 `count`: egész, a küldött egységek száma\
-`arrive`: egész, a kör (tick) azonosító száma, amikor az egységek meg fognak érkezni (a jelenlegi körben (tick-ben) megérkező egységek nem szerepelnek a listában, mert már odaértek)
+`arrive`: egész, a kör (tick) azonosító száma, amikor az egységek meg fognak érkezni
 
 #### Kimenet
 
@@ -136,8 +137,7 @@ Szerver (1. tick)
 
 ## A szimuláció lépései
 
-1. Az utazó egységek mozognak egyet a céljuk felé
-2. A barátságos egységek megérkeznek
-3. Az ellenséges egységek harcolnak (Itt vége lehet a játéknak egy játékos számára)
+1. A botok megkapják az aktuális játékállást és új parancsokat adnak ki
+2. Az elküldött csapatok elindulnak
+3. A célbaérő csapatok megérkeznek és harcolnak, ha kell (Itt vége lehet a játéknak egy játékos számára)
 4. A bolygók új egységeket hozhatnak létre
-5. A botok új parancsokat adnak ki
