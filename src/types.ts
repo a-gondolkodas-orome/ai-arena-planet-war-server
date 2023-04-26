@@ -91,6 +91,7 @@ export type GameStateVis = {
       x: number;
       y: number;
       size: number;
+      production: number;
       player: number | null;
     }[];
   };

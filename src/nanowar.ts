@@ -373,6 +373,7 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
           x: planet.x,
           y: planet.y,
           size: planet.size,
+          production: planet.efficiency,
           player: tickLog[0].planets[planet.id].player,
         };
       }),
