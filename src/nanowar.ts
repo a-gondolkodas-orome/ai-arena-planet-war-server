@@ -1,12 +1,12 @@
 import { Bot, BotPool } from "./BotWrapper";
 import {
-  PlayerID,
-  TickVisualizer,
   GameState,
-  GameStateVis,
-  UserStep,
   gameStateCodec,
+  GameStateVis,
+  PlayerID,
   TickCommLog,
+  TickVisualizer,
+  UserStep,
 } from "./types";
 import * as fs from "fs";
 import { decodeJson } from "./codec";
@@ -16,8 +16,12 @@ import { notNull } from "./utils";
 const BOT_LOG__MAX_LENGTH = 2000;
 
 let troopIDCounter = 0;
-const tickLog: TickVisualizer[] = [];
-const botCommLog = new Map<number, TickCommLog>();
+const matchLog: TickVisualizer[] = [];
+let botCommLog: TickCommLog[] = [];
+function resetBotCommLog(length: number) {
+  botCommLog = [];
+  for (let i = 0; i < length; ++i) botCommLog.push({ received: [], sent: [] });
+}
 
 if (process.argv.length < 3) {
   console.error("Provide the path to a match config file as command line parameter");
@@ -33,32 +37,44 @@ makeMatch(map, bots).catch((error) => console.error(error));
 
 // TODOS: bot.doStep(state)
 
-async function makeMatch(state: GameState, bots: BotPool) {
+async function makeMatch(state: GameState, botPool: BotPool) {
   console.log("starting match at", new Date().toLocaleString());
-  const workingBots = await testingBots(state, bots);
+  resetBotCommLog(botPool.bots.length);
+  const workingBots = await testingBots(state, botPool);
   for (let i = 0; i < workingBots.length; i++) {
     await sendMessage(workingBots[i], startingPosToString(state, i));
   }
   let isThereAliveBot = true;
-  tickToVisualizer(bots, state); // Save for visualizer
-  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 100) {
+  tickToVisualizer(botPool, state); // Save for visualizer
+  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 500) {
     state.tick.id++;
     console.log(`${formatTime()}: tick #${state.tick.id}`);
     console.log(state.tick.planets);
     const userSteps: UserStep[] = [];
     for (let i = 0; i < workingBots.length; i++) {
+      if (workingBots[i].error) {
+        console.log(
+          `${formatTime()}: ${workingBots[i].id} (#${
+            workingBots[i].index
+          }) is in error state, skipping`,
+        );
+        userSteps.push([]);
+        continue;
+      }
       await sendMessage(workingBots[i], tickToString(state));
+      if (workingBots[i].error) {
+        console.log(`${formatTime()}: ${workingBots[i].id} (#${workingBots[i].index}) send failed`);
+      }
       userSteps.push(await getUserSteps(workingBots[i], state, i));
       let botLog = workingBots[i].std_err.join("\n");
       workingBots[i].std_err = [];
       if (botLog.length > BOT_LOG__MAX_LENGTH) {
         botLog = botLog.substring(0, BOT_LOG__MAX_LENGTH) + "...\n[[bot log trimmed to 2KB]]";
       }
-      const commLog = botCommLog.get(workingBots[i].index);
-      if (!commLog) throw new Error("makeMatch: bot commLog not found");
+      const commLog = botCommLog[workingBots[i].index];
       commLog.botLog = botLog || undefined;
     }
-    tickToVisualizer(bots, state); // Save for visualizer
+    tickToVisualizer(botPool, state); // Save for visualizer
     state = updateState(state, userSteps);
 
     const playersAlive = Array.from(
@@ -69,14 +85,18 @@ async function makeMatch(state: GameState, bots: BotPool) {
     if (playersAlive.length < 2) isThereAliveBot = false;
   }
   console.log(`${formatTime()} match finished`);
-  stateToVisualizer(bots, state);
-  await bots.stopAll();
+  stateToVisualizer(botPool, state);
+  await botPool.stopAll();
 }
 
 async function getUserSteps(bot: Bot, state: GameState, playerId: number) {
   const firstAnswer = await receiveMessage(bot);
   //console.log("firstAnswer:", firstAnswer);
-  if (firstAnswer.data === null) return [];
+  if (firstAnswer.error) {
+    setCommandError(bot, firstAnswer.error.message);
+    return [];
+  }
+
   let numberOfMoves;
   try {
     numberOfMoves = myParseInt(firstAnswer.data, { min: 0, max: 100, throwError: true });
@@ -87,8 +107,10 @@ async function getUserSteps(bot: Bot, state: GameState, playerId: number) {
   if (numberOfMoves === 0) return [];
   //console.log(firstAnswer.data);
   const answer = await receiveMessage(bot, numberOfMoves);
-  if (answer.data === null) return [];
-  //console.log(i, answer.data)
+  if (answer.error) {
+    setCommandError(bot, answer.error.message);
+    return [];
+  }
 
   const validatedStep = validateStep(state, playerId, numberOfMoves, answer.data);
   if ("error" in validatedStep) {
@@ -103,6 +125,7 @@ async function testingBots(state: GameState, bots: BotPool) {
   const workingBots = [];
   for (const bot of bots.bots) {
     await sendMessage(bot, "START");
+    if (bot.error) continue;
     if ((await receiveMessage(bot, 1)).data === "OK") {
       workingBots.push(bot);
     }
@@ -338,7 +361,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
 }
 
 function tickToVisualizer(botPool: BotPool, state: GameState): void {
-  tickLog.push({
+  const tickLog: TickVisualizer = {
     tick: state.tick.id,
     planets: state.tick.planets.map((planet) => {
       return {
@@ -358,9 +381,15 @@ function tickToVisualizer(botPool: BotPool, state: GameState): void {
         progress: state.planetsDistances[troop.from][troop.to] - troop.endTick + state.tick.id,
       };
     }),
-    messages: Object.fromEntries(botCommLog),
-  });
-  botCommLog.clear();
+    bots: botPool.bots.map((bot, index) => ({
+      id: bot.id,
+      index: bot.index,
+      ...botCommLog[index],
+      offline: !!bot.error || undefined,
+    })),
+  };
+  matchLog.push(tickLog);
+  resetBotCommLog(botPool.bots.length);
 }
 
 function stateToVisualizer(botPool: BotPool, state: GameState): void {
@@ -374,12 +403,12 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
           y: planet.y,
           size: planet.size,
           production: planet.efficiency,
-          player: tickLog[0].planets[planet.id].player,
+          player: matchLog[0].planets[planet.id].player,
         };
       }),
       players: matchConfig.bots.map((bot, index) => ({ id: bot.id, name: bot.name, index })),
     },
-    ticks: tickLog,
+    ticks: matchLog,
   };
   fs.writeFileSync("match.log", JSON.stringify(stateVis, undefined, 2), "utf8");
   const score = new Map<string, number>();
@@ -405,11 +434,7 @@ async function sendMessage(bot: Bot, message: string) {
   await bot.send(message);
   const now = new Date();
   console.log(`${formatTime(now)}: ${bot.id} (#${bot.index}) received\n${message}`);
-  let commLog = botCommLog.get(bot.index);
-  if (!commLog) {
-    botCommLog.set(bot.index, (commLog = { received: [], sent: [] }));
-  }
-  commLog.received.push({ message, timestamp: now.getTime() });
+  botCommLog[bot.index].received.push({ message, timestamp: now.getTime() });
 }
 
 async function receiveMessage(bot: Bot, numberOfLines?: number) {
@@ -417,21 +442,13 @@ async function receiveMessage(bot: Bot, numberOfLines?: number) {
   const now = new Date();
   console.log(`${formatTime(now)}: ${bot.id} (#${bot.index}) sent\n${message.data}`);
   if (message.data !== null) {
-    let commLog = botCommLog.get(bot.index);
-    if (!commLog) {
-      botCommLog.set(bot.index, (commLog = { received: [], sent: [] }));
-    }
-    commLog.sent.push({ message: message.data, timestamp: now.getTime() });
+    botCommLog[bot.index].sent.push({ message: message.data, timestamp: now.getTime() });
   }
   return message;
 }
 
 function setCommandError(bot: Bot, error: string) {
-  let commLog = botCommLog.get(bot.index);
-  if (!commLog) {
-    botCommLog.set(bot.index, (commLog = { received: [], sent: [] }));
-  }
-  commLog.commandError = error;
+  botCommLog[bot.index].commandError = error;
   console.log(`${bot.id} (#${bot.index}) command error: ${error}`);
 }
 

@@ -64,9 +64,7 @@ export type TickVisualizer = {
     distance: number;
     progress: number;
   }[];
-  messages: {
-    [key: number]: TickCommLog;
-  };
+  bots: (TickCommLog & { id: string; index: number; offline?: true })[];
   //    error: [{tick: number, playerID: PlayerID, error: string}]; //TODO: implement on output to frontend
 };
 

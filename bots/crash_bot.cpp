@@ -28,6 +28,7 @@ int main()
     initialize();
     while (readTick())
     {
+        if (tick == 20) return 1;
         respond();
     }
 }
