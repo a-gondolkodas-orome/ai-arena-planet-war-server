@@ -46,7 +46,7 @@ async function makeMatch(state: GameState, botPool: BotPool) {
   }
   let isThereAliveBot = true;
   tickToVisualizer(botPool, state); // Save for visualizer
-  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 500) {
+  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 300) {
     state.tick.id++;
     console.log(`${formatTime()}: tick #${state.tick.id}`);
     console.log(state.tick.planets);
@@ -138,7 +138,7 @@ function startingPosToString(state: GameState, player: PlayerID): string {
   const numberOfPlanets = state.planets.length;
   let planets = numberOfPlanets.toString() + "\n";
   for (let i = 0; i < numberOfPlanets; i++) {
-    planets += `${state.planets[i].x} ${state.planets[i].y} ${state.planets[i].efficiency}\n`;
+    planets += `${state.planets[i].x} ${state.planets[i].y} ${state.planets[i].production}\n`;
   }
 
   // Planet distances
@@ -331,7 +331,7 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
     } else if (max.who !== null) {
       if (state.tick.planets[i].player === null || max.who !== state.tick.planets[i].player?.id) {
         // Update player of the planet if it is changes
-        state.tick.planets[i].player = { id: max.who, startingTick: state.tick.id };
+        state.tick.planets[i].player = { id: max.who };
       }
       state.tick.planets[i].population = max.size - max2.size;
     } else {
@@ -344,16 +344,11 @@ function updateState(state: GameState, steps: UserStep[]): GameState {
   }
   //console.log("Population:", state.tick.planets[1].population)
 
-  // Add new troops depends on the efficiency and startingTick of the planets
+  // Add new troops based on the production of the planets
   for (let i = 0; i < state.tick.planets.length; i++) {
     const planet = state.tick.planets[i];
     if (planet.player !== null) {
-      const startingTick = planet.player.startingTick;
-      const currentTick = state.tick.id;
-      const efficiency = state.planets[i].efficiency;
-      if (currentTick - startingTick > 0 && (currentTick - startingTick) % efficiency === 0) {
-        state.tick.planets[i].population++;
-      }
+      state.tick.planets[i].population += state.planets[i].production;
     }
   }
 
@@ -402,7 +397,7 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
           x: planet.x,
           y: planet.y,
           size: planet.size,
-          production: planet.efficiency,
+          production: planet.production,
           player: matchLog[0].planets[planet.id].player,
         };
       }),

@@ -8,7 +8,7 @@ int P;
 struct Planet {
   int id;
   int x, y;
-  int efficiency;
+  int production;
   int player_id;
   int population;
 };
@@ -35,7 +35,7 @@ void initialize() {
   planets.resize(P);
   for (int i = 0; i < P; ++i) {
     planets[i].id = i;
-    cin >> planets[i].x >> planets[i].y >> planets[i].efficiency;
+    cin >> planets[i].x >> planets[i].y >> planets[i].production;
   }
 
   dist.resize(P, vector<int>(P));

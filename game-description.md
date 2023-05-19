@@ -21,23 +21,32 @@ Ha ellenséges bolygóra érnek, akkor a bolygó annak az irányítása alá ker
 2. Ha piros 5 egységgel van jelen, kék 4, zöld pedig 8 egységgel egyszerre érkeznek meg, akkor 3-an harcolnak és zöld lesz a bolygó tulajdonosa 8-5=3 egységgel.
 
 Döntetlen esetén a bolygó lakatlan lesz és semlegessé válik.
-A játékosok által birtokolt bolygók bizonyos gyakorisággal új egységet hoznak létre.
-A termelés sebességét a bolygó hatékonysága határozza meg, mely a játék során nem változik.
+A játékosok által birtokolt bolygók minden körben új egységeket hoznak létre.
+A bolygók termelését (a körönként létrehozott egységek számát) a játék elején mindenki megtudja,
+és ez a játék során nem változik.
 Semleges bolygók nem hoznak létre új egységet.
 Figyelem, ha az összes egységet elküldöd egy bolygóról, akkor elveszted felette az irányítást, és az nem termel tovább.
-
-A bolygó hatékonyságát úgy fejezzük ki, hogy milyen gyakran jön létre rajta új egység.
-Ha például a hatékonyság 4, akkor a birtokos minden negyedik körben (tick-ben) kap új egységet.
-A termelés számlálója újraindul, ha a bolygó tulajdonosa megváltozik.
 
 Egy játékos kiesik, ha már nincs több egysége a pályán.
 A játék akkor ér véget, ha csak egy játékos marad, vagy letelik a játék elején megadott maximális kör szám.
 
 Az egységeket programmal fogjátok tudni irányítani, amit alább részletezünk.
 A programok egymás ellen fognak játszani.
-Az egyszerűség kedvéért körökre osztjuk a játékot, melyek között fix mennyiségű idő telik el.
-A program minden kör elején megkapja az aktuális játékállapotot, majd vissza kell küldenie, mit szeretne lépni.
+A játék körökre osztva zajlik (a köröket tick-nek is hívjuk).
+A program minden kör elején beolvassa az aktuális játékállapotot, majd ki kell írnia, mit szeretne lépni.
+A körönkénti időlimit 30ms. Ha ezen belül nem válaszol a program, abból a körből kimarad.
 Ezután a szerver kiszámolja, mi fog történni az akciók hatására.
+
+A játéknak akkor van vége, ha már csak egy játékosnak van egysége (bolygón vagy úton).
+Illetve 300 kör után akkor is véget ér a játék, ha még több játékos is életben van.
+Ilyenkor az nyer, akinek összesen a legtöbb egysége van.
+
+## Egy kör lejátszásának lépései
+
+1. A botok megkapják az aktuális játékállást és új parancsokat adnak ki
+2. Az elküldött csapatok elindulnak
+3. A célbaérő csapatok megérkeznek és harcolnak, ha kell (Itt vége lehet a játéknak egy játékos számára)
+4. A bolygók új egységeket hozhatnak létre
 
 ## Kommunikációs protokoll
 
@@ -59,7 +68,7 @@ Pálya adatok (csak Bemenet):
 `P`: (2 ≤ _P_ ≤ 50) egész szám, ennyi bolygó van
 
 Minden bolygóra (_P_ sor):\
-`efficiency`: (1 ≤ _efficiency_ ≤ 10) egész szám, a bolygó hatékonysága\
+`production`: (1 ≤ _production_ ≤ 10) egész szám, a bolygó termelése\
 A bolygókat _0_-tól _P-1_-ig számozzuk (később planetID), az _i_. sor az _i_ sorszámú bolygó adatait tartalmazza.
 
 Minden bolygó-párra (_P\*P_-s szimmetrikus mátrix):\
@@ -102,7 +111,6 @@ Ha ezt megszegitek, hibát kaptok és abban a körben nem léphettek.
 Bemenet
 
 Ha a játéknak vége, a tick száma helyett -1-et küldünk.
-Az eredmény a webes felületen lesz látható.
 
 ### Példa üzenetek
 
@@ -135,13 +143,6 @@ Szerver (1. tick)
 3 -1 100
 0
 ```
-
-## A szimuláció lépései
-
-1. A botok megkapják az aktuális játékállást és új parancsokat adnak ki
-2. Az elküldött csapatok elindulnak
-3. A célbaérő csapatok megérkeznek és harcolnak, ha kell (Itt vége lehet a játéknak egy játékos számára)
-4. A bolygók új egységeket hozhatnak létre
 
 ## A megjelenítő
 

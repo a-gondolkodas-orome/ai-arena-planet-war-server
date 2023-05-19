@@ -11,7 +11,7 @@ export const planetCodec = t.type({
   id: t.number,
   x: t.number,
   y: t.number,
-  efficiency: t.number,
+  production: t.number,
   // just for visualizer
   size: t.number,
 });
@@ -23,7 +23,7 @@ export const tickCodec = t.type({
   planets: t.array(
     t.type({
       id: t.number,
-      player: t.union([t.type({ id: t.number, startingTick: t.number }), t.null]),
+      player: t.union([t.type({ id: t.number }), t.null]),
       population: t.number, // It can also have population without player
     }),
   ),

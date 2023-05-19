@@ -12,7 +12,7 @@ export class Bot {
   stdin: Writable;
 
   private static readonly starting_available_time: number = 1000; // in ms
-  private static readonly plus_time_per_round: number = 50; // in ms
+  private static readonly plus_time_per_round: number = 30; // in ms
 
   public constructor(readonly id: string, readonly index: number, command: string) {
     this.available_time = Bot.starting_available_time;
