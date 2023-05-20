@@ -49,7 +49,7 @@ async function makeMatch(state: GameState, botPool: BotPool) {
   }
   let isThereAliveBot = true;
   tickToVisualizer(botPool, state); // Save for visualizer
-  while ((isThereAliveBot || state.tick.troops.length !== 0) && state.tick.id < 300) {
+  while ((isThereAliveBot) && state.tick.id < 300) {
     state.tick.id++;
     console.log(`${formatTime()}: tick #${state.tick.id}`);
     console.log(state.tick.planets);
@@ -85,7 +85,7 @@ async function makeMatch(state: GameState, botPool: BotPool) {
         state.tick.planets.map((planet) => planet.player?.id).filter((id) => id !== undefined),
       ),
     );
-    if (playersAlive.length < 2) isThereAliveBot = false;
+    if (playersAlive.length < 2 && state.tick.troops.length !== 0) isThereAliveBot = false;
   }
   console.log(`${formatTime()} match finished`);
   stateToVisualizer(botPool, state);
