@@ -33,7 +33,10 @@ const matchConfig = decodeJson(
 );
 const map = decodeJson(gameStateCodec, fs.readFileSync(matchConfig.map, { encoding: "utf-8" }));
 const bots = new BotPool(matchConfig.bots);
-makeMatch(map, bots).catch((error) => console.error(error));
+makeMatch(map, bots).catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
 
 // TODOS: bot.doStep(state)
 

@@ -9,44 +9,60 @@
       "id": 0,
       "x": 50,
       "y": 50,
-      "production": 5,
+      "production": 2,
       "size": 5
     },
     {
       "id": 1,
       "x": 150,
       "y": 150,
-      "production": 5,
+      "production": 2,
       "size": 5
     },
     {
       "id": 2,
       "x": 50,
       "y": 150,
-      "production": 5,
+      "production": 2,
       "size": 5
     },
     {
       "id": 3,
       "x": 150,
       "y": 50,
-      "production": 5,
+      "production": 2,
       "size": 5
     },
     {
       "id": 4,
       "x": 100,
       "y": 100,
-      "production": 1,
+      "production": 10,
       "size": 15
+    },
+    {
+      "id": 5,
+      "x": 100,
+      "y": 25,
+      "production": 1,
+      "size": 3
+    },
+    {
+      "id": 6,
+      "x": 100,
+      "y": 175,
+      "production": 1,
+      "size": 3
     }
   ],
   "planetsDistances": [
-    [0, 14, 10, 10, 7],
-    [14, 0, 10, 10, 7],
-    [10, 10, 0, 14, 7],
-    [10, 10, 14, 0, 7],
-    [7, 7, 7, 7, 0]
+    [0, 14, 10, 10, 7, 6, 13],
+    [14, 0, 10, 10, 7, 13, 6],
+    [10, 10, 0, 14, 7, 13, 6],
+    [10, 10, 14, 0, 7, 6, 13],
+    [7, 7, 7, 7, 0, 8, 8],
+    [6, 13, 13, 6, 8, 0, 15],
+    [13, 6, 6, 13, 8, 15, 0]
   ],
   "tick": {
     "id": 0,
@@ -54,33 +70,41 @@
       {
         "id": 0,
         "player": {
-          "id": 0,
-          "startingTick": 0
+          "id": 0
         },
         "population": 10
       },
       {
         "id": 1,
         "player": {
-          "id": 1,
-          "startingTick": 0
+          "id": 1
         },
         "population": 10
       },
       {
         "id": 2,
         "player": null,
-        "population": 1
+        "population": 30
       },
       {
         "id": 3,
         "player": null,
-        "population": 1
+        "population": 30
       },
       {
         "id": 4,
         "player": null,
-        "population": 50
+        "population": 100
+      },
+      {
+        "id": 5,
+        "player": null,
+        "population": 5
+      },
+      {
+        "id": 6,
+        "player": null,
+        "population": 5
       }
     ],
     "troops": []

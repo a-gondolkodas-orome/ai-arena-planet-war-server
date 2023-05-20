@@ -9,16 +9,16 @@
   },
   "maps": [
     {
-      "name": "map2-1",
-      "path": "./maps/map2-1.json",
+      "name": "giant",
+      "path": "./maps/giant.json",
       "playerCount": {
         "min": 2,
         "max": 2
       }
     },
     {
-      "name": "map2-2",
-      "path": "./maps/map2-2.json",
+      "name": "face-to-face",
+      "path": "./maps/face-to-face.json",
       "playerCount": {
         "min": 2,
         "max": 2
