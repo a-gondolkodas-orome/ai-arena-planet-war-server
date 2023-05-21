@@ -412,10 +412,10 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
   fs.writeFileSync("match.log", JSON.stringify(stateVis, undefined, 2), "utf8");
   const score = new Map<string, number>();
   for (const player of stateVis.init.players) score.set(player.id, 0);
-  const lastTick = stateVis.ticks[stateVis.ticks.length - 1];
+  const lastTick = state.tick;
   for (const planet of lastTick.planets)
     if (planet.player !== null) {
-      const playerId = botPool.bots[planet.player].id;
+      const playerId = botPool.bots[planet.player.id].id;
       score.set(playerId, notNull(score.get(playerId)) + planet.population);
     }
   for (const troop of lastTick.troops) {
