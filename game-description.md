@@ -27,8 +27,9 @@ A bolygók termelését (a körönként létrehozott egységek számát) a ját�
 Semleges bolygók nem hoznak létre új egységet.
 Figyelem, ha az összes egységet elküldöd egy bolygóról, akkor elveszted felette az irányítást, és az nem termel tovább.
 
-Egy játékos kiesik, ha már nincs több egysége a pályán.
-A játék akkor ér véget, ha csak egy játékos marad, vagy letelik a játék elején megadott maximális kör szám.
+A játéknak akkor van vége, ha már csak egy játékosnak van egysége (bolygón vagy úton).
+Illetve 300 kör után akkor is véget ér a játék, ha még több játékos is életben van.
+Ilyenkor az nyer, akinek összesen a legtöbb egysége van.
 
 Az egységeket programmal fogjátok tudni irányítani, amit alább részletezünk.
 A programok egymás ellen fognak játszani.
@@ -36,10 +37,6 @@ A játék körökre osztva zajlik (a köröket tick-nek is hívjuk).
 A program minden kör elején beolvassa az aktuális játékállapotot, majd ki kell írnia, mit szeretne lépni.
 A körönkénti időlimit 30ms. Ha ezen belül nem válaszol a program, abból a körből kimarad.
 Ezután a szerver kiszámolja, mi fog történni az akciók hatására.
-
-A játéknak akkor van vége, ha már csak egy játékosnak van egysége (bolygón vagy úton).
-Illetve 300 kör után akkor is véget ér a játék, ha még több játékos is életben van.
-Ilyenkor az nyer, akinek összesen a legtöbb egysége van.
 
 ## Egy kör lejátszásának lépései
 

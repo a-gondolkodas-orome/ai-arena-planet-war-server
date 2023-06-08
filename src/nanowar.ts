@@ -88,6 +88,33 @@ async function makeMatch(state: GameState, botPool: BotPool) {
     ]);
     if (playersAlive.size < 2) isThereAliveBot = false;
   }
+
+  state.tick.id++;
+  console.log(`${formatTime()}: tick #${state.tick.id}`);
+  console.log(state.tick.planets);
+  for (let i = 0; i < workingBots.length; i++) {
+    if (workingBots[i].error) {
+      console.log(
+        `${formatTime()}: ${workingBots[i].id} (#${
+          workingBots[i].index
+        }) is in error state, skipping`,
+      );
+      continue;
+    }
+    await sendMessage(workingBots[i], tickToString(state, true));
+    if (workingBots[i].error) {
+      console.log(`${formatTime()}: ${workingBots[i].id} (#${workingBots[i].index}) send failed`);
+    }
+    let botLog = workingBots[i].std_err.join("\n");
+    workingBots[i].std_err = [];
+    if (botLog.length > BOT_LOG__MAX_LENGTH) {
+      botLog = botLog.substring(0, BOT_LOG__MAX_LENGTH) + "...\n[[bot log trimmed to 2KB]]";
+    }
+    const commLog = botCommLog[workingBots[i].index];
+    commLog.botLog = botLog || undefined;
+  }
+  tickToVisualizer(botPool, state); // Save for visualizer
+
   console.log(`${formatTime()} match finished`);
   stateToVisualizer(botPool, state);
   await botPool.stopAll();
@@ -164,8 +191,8 @@ function startingPosToString(state: GameState, player: PlayerID): string {
   return player.toString() + "\n" + planets + planetsDistances;
 }
 
-function tickToString(state: GameState): string {
-  let tick = state.tick.id.toString() + "\n";
+function tickToString(state: GameState, isLastTick = false): string {
+  let tick = (isLastTick ? -1 : state.tick.id) + "\n";
   for (const planet of state.tick.planets) {
     // If no player owns the planet, return -1
     let playerID = -1;
