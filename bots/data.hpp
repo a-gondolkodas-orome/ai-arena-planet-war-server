@@ -8,7 +8,6 @@ int P;
 
 struct Planet
 {
-    int x, y;
     int production;
     int playerID;
     int population;

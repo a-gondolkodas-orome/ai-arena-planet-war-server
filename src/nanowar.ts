@@ -169,7 +169,7 @@ function startingPosToString(state: GameState, player: PlayerID): string {
   const numberOfPlanets = state.planets.length;
   let planets = numberOfPlanets.toString() + "\n";
   for (let i = 0; i < numberOfPlanets; i++) {
-    planets += `${state.planets[i].x} ${state.planets[i].y} ${state.planets[i].production}\n`;
+    planets += `${state.planets[i].production}\n`;
   }
 
   // Planet distances
