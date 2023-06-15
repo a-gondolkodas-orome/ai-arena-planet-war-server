@@ -130,7 +130,7 @@ Szerver:
 10 10 14 0
 ```
 
-Szerver (1. tick)
+Szerver (tick 0)
 
 ```
 0

@@ -69,7 +69,7 @@ For each planet (_P_ lines):\
 The planets are numbered from _0_ to _P-1_ (later planetID), line _i_ contains the data of the planet _i_.
 
 For each pair of planets (symmetric matrix of size _P\*P_):\
-`distance[i][j]` : integer, the number of ticks it takes to travel between planet _i_ and _j_  (same in both directions).
+`distance[i][j]` : integer, the number of ticks it takes to travel between planet _i_ and _j_ (same in both directions).
 If you send units from planet _i_ to _j_ in tick _t_, they will arrive and potentially fight in tick _t+distance[i][j]_.
 The direct route between any 2 planets is the shortest.
 
@@ -85,8 +85,8 @@ Data of planets (_P_ lines):\
 `T` : integer, number of troops in transit.
 
 Troops data (_T_ lines):\
-`playerID`, `from`, `to`, `count`, `arrive`
-`playerID`: integer, player ID\.
+`playerID`, `from`, `to`, `count`, `arrive`\
+`playerID`: integer, player ID\
 `from`, `to`: _planetID_ - integers, starting point and destination of the troops sent (can only be sent from own planet)\
 `count`: integer, number of units sent\
 `arrive`: integer, the number of the round (tick) when the units will arrive
@@ -96,7 +96,7 @@ Troops data (_T_ lines):\
 `T`: integer, number of troops to move
 
 Troops data (_T_ lines)\
-`from`, `to`, `count`
+`from`, `to`, `count`\
 `from`, `to`: _planetID_ - integers, starting location and destination of the units being sent (can only be sent from own planet)\
 `count`: positive integer, number of units sent
 
@@ -130,7 +130,7 @@ Server:
 10 10 14 0
 ```
 
-Server (1st tick)
+Server (tick 0)
 
 ```
 0

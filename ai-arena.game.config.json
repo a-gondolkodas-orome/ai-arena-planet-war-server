@@ -2,7 +2,10 @@
   "name": "Planet War",
   "shortDescription": "Conquer planets strategically to expand your empire over the whole galaxy.",
   "picturePath": "./cover.png",
-  "fullDescriptionPath": "game-description.md",
+  "fullDescription": {
+    "en": "game-description-en.md",
+    "hu": "game-description-hu.md"
+  },
   "playerCount": {
     "min": 2,
     "max": 6
