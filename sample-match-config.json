@@ -1,5 +1,5 @@
 {
-  "map": "maps/map2-2.json",
+  "map": "maps/face-to-face.json",
   "bots": [
     {
       "id": "abcd1234",

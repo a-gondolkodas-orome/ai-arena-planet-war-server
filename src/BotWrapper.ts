@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
-import { BotConfig } from "./types";
+import { BotConfig } from "./common";
 import { Writable } from "stream";
 import { notNull } from "./utils";
 

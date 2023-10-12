@@ -117,7 +117,7 @@ async function makeMatch(state: GameState, botPool: BotPool) {
 
   console.log(`${formatTime()} match finished`);
   stateToVisualizer(botPool, state);
-  await botPool.stopAll();
+  botPool.stopAll();
 }
 
 async function getUserSteps(bot: Bot, state: GameState, playerId: number) {

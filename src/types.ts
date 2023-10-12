@@ -1,7 +1,4 @@
 import * as t from "io-ts";
-import { botConfigCodec } from "./common";
-
-export type BotConfig = t.TypeOf<typeof botConfigCodec>;
 
 export const playerCodec = t.type({ id: t.number, name: t.string });
 export type Player = t.TypeOf<typeof playerCodec>;
