@@ -1,0 +1,45 @@
+{
+  "name": "Planet War",
+  "shortDescription": "Conquer planets strategically to expand your empire over the whole galaxy.",
+  "picturePath": "./cover.png",
+  "fullDescription": {
+    "en": "game-description-en.md",
+    "hu": "game-description-hu.md"
+  },
+  "playerCount": {
+    "min": 2,
+    "max": 6
+  },
+  "maps": [
+    {
+      "name": "giant",
+      "path": "./maps/giant.json",
+      "playerCount": {
+        "min": 2,
+        "max": 2
+      }
+    },
+    {
+      "name": "face-to-face",
+      "path": "./maps/face-to-face.json",
+      "playerCount": {
+        "min": 2,
+        "max": 2
+      }
+    }
+  ],
+  "bots": [
+    {
+      "name": "Test Bot (easy)",
+      "path": "bots/test-bot-easy.cpp"
+    },
+    {
+      "name": "Test Bot (hard)",
+      "path": "bots/test-bot-hard.zip"
+    }
+  ],
+  "packageServer": {
+    "command": "chmod +x ./package_server.sh && ./package_server.sh",
+    "result": "./planet-war-server.zip"
+  }
+}
