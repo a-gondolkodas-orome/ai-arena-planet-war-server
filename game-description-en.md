@@ -105,9 +105,8 @@ If you break this, you will get an error and you will not be allowed to move in 
 
 ### Game over
 
-Input
-
-When the game is over, -1 is sent instead of the tick number.
+When the game is over, the bot receives a single `-1` as input.
+It shouldn't send any response, and it should terminate.
 
 ### Example messages
 
@@ -146,10 +145,10 @@ Server (tick 0)
 Besides animated replay of matches, it supports debugging in particular.
 To do this, select in the Player box which bot communication you want to track.
 In the messages box, you can see what game state your bot received at the beginning of the tick and what it sent as a response.
-(The events of a given tick are only executed after this, you will see the effect of your move in the next tick.)
+The displayed game state already contains the effect of the events of the current tick.
 
-If you also want to see your bot's strategic decisions, write a log for this to the standard error (in C++, e.g. `cerr << "wait until 10 soldiers").
-You will also see in the display your own log for that tick, but maximum 2000 characters per tick.
+If you also want to see your bot's strategic decisions, write a log for this to the standard error (in C++, e.g. `cerr << "number of evaluated options: 42"`).
+You will see in the display your own log for that tick, but at most 2000 characters per tick.
 
 If you see text with a red background at a tick, it means that your bot sent a wrong command or crashed at that tick.
 In the latter case, it will obviously not do anything for the rest of the game and will be crossed off the player list.

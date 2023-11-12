@@ -35,7 +35,7 @@ void initialize() {
   planets.resize(P);
   for (int i = 0; i < P; ++i) {
     planets[i].id = i;
-    cin >> planets[i].x >> planets[i].y >> planets[i].production;
+    cin >> planets[i].production;
   }
 
   dist.resize(P, vector<int>(P));

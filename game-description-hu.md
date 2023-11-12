@@ -105,9 +105,8 @@ Ha ezt megszegitek, hibát kaptok és abban a körben nem léphettek.
 
 ### Játék vége
 
-Bemenet
-
-Ha a játéknak vége, a tick száma helyett -1-et küldünk.
+Ha a játéknak vége, a bot egyetlen `-1`-et kap a bemeneten.
+Erre ne válaszoljon, és érjen véget a program.
 
 ### Példa üzenetek
 
@@ -146,10 +145,10 @@ Szerver (tick 0)
 A meccsek animált visszajátszása mellett első sorban a hibakeresést támogatja.
 Ehhez a Player dobozban válaszd ki, hogy melyik bot kommunikációját szeretnéd követni.
 Az üzenetek mezőben látod, hogy milyen játék állapotot kaptt a botod a tick elején, és erre mit válaszolt.
-(Az adott tick eseményeinek végrehajtása csak ez után történik, a lépésed hatását a következő tickben látod.)
+A megjelenített játék állapot az adott tick eseményeinek hatását már tartalmazza.
 
-Ha a botod stratégiai döntéseit is szeretnéd látni, írj ki erre vonatkozó logot a standard errorra (c++-ban pl. `cerr << "várakozás 10 katonáig"`).
-A megjelenítőben látni fogod az adott tickhez kiírt saját logodat is, de tickenként max 2000 karaktert.
+Ha a botod stratégiai döntéseit is szeretnéd látni, írj ki erre vonatkozó logot a standard errorra (c++-ban pl. `cerr << "megvizsgált lehetőségek száma: 42"`).
+A megjelenítőben látni fogod az adott tickhez kiírt saját logodat, de tickenként max 2000 karaktert.
 
 Ha egy ticknél piros hátterű szöveget látsz, az azt jelenti, hogy a botod abban a tickben hibás parancso(ka)t küldött, vagy crashelt.
 Az utóbbi esetben a játék hátralévő részében nyilván nem csinál semmit, a játékos listában is ki lesz húzva.

@@ -47,9 +47,9 @@ async function makeMatch(state: GameState, botPool: BotPool) {
   for (let i = 0; i < workingBots.length; i++) {
     await sendMessage(workingBots[i], startingPosToString(state, i));
   }
-  let isThereAliveBot = true;
+  let gameOver = false;
   tickToVisualizer(botPool, state); // Save for visualizer
-  while (isThereAliveBot && state.tick.id < 300) {
+  while (!gameOver && state.tick.id < 300) {
     state.tick.id++;
     console.log(`${formatTime()}: tick #${state.tick.id}`);
     console.log(state.tick.planets);
@@ -77,8 +77,8 @@ async function makeMatch(state: GameState, botPool: BotPool) {
       const commLog = botCommLog[workingBots[i].index];
       commLog.botLog = botLog || undefined;
     }
-    tickToVisualizer(botPool, state); // Save for visualizer
     state = updateState(state, userSteps);
+    tickToVisualizer(botPool, state); // Save for visualizer
 
     const playersAlive = new Set<number>([
       ...state.tick.planets
@@ -86,7 +86,7 @@ async function makeMatch(state: GameState, botPool: BotPool) {
         .filter((id): id is number => id !== undefined),
       ...state.tick.troops.map((troop) => troop.player),
     ]);
-    if (playersAlive.size < 2) isThereAliveBot = false;
+    if (playersAlive.size < 2) gameOver = true;
   }
 
   state.tick.id++;
@@ -101,19 +101,11 @@ async function makeMatch(state: GameState, botPool: BotPool) {
       );
       continue;
     }
-    await sendMessage(workingBots[i], tickToString(state, true));
+    await sendMessage(workingBots[i], "-1\n");
     if (workingBots[i].error) {
       console.log(`${formatTime()}: ${workingBots[i].id} (#${workingBots[i].index}) send failed`);
     }
-    let botLog = workingBots[i].std_err.join("\n");
-    workingBots[i].std_err = [];
-    if (botLog.length > BOT_LOG__MAX_LENGTH) {
-      botLog = botLog.substring(0, BOT_LOG__MAX_LENGTH) + "...\n[[bot log trimmed to 2KB]]";
-    }
-    const commLog = botCommLog[workingBots[i].index];
-    commLog.botLog = botLog || undefined;
   }
-  tickToVisualizer(botPool, state); // Save for visualizer
 
   console.log(`${formatTime()} match finished`);
   stateToVisualizer(botPool, state);
@@ -191,8 +183,8 @@ function startingPosToString(state: GameState, player: PlayerID): string {
   return player.toString() + "\n" + planets + planetsDistances;
 }
 
-function tickToString(state: GameState, isLastTick = false): string {
-  let tick = (isLastTick ? -1 : state.tick.id) + "\n";
+function tickToString(state: GameState): string {
+  let tick = state.tick.id + "\n";
   for (const planet of state.tick.planets) {
     // If no player owns the planet, return -1
     let playerID = -1;
