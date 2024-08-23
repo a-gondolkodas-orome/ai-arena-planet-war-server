@@ -65,7 +65,7 @@ Pálya adatok (csak Bemenet):
 `P`: (2 ≤ _P_ ≤ 50) egész szám, ennyi bolygó van
 
 Minden bolygóra (_P_ sor):\
-`production`: (1 ≤ _production_ ≤ 10) egész szám, a bolygó termelése\
+`production`: (1 ≤ _production_ ≤ 10) egész szám, a bolygó ennyi egységet termel körönként\
 A bolygókat _0_-tól _P-1_-ig számozzuk (később planetID), az _i_. sor az _i_ sorszámú bolygó adatait tartalmazza.
 
 Minden bolygó-párra (_P\*P_-s szimmetrikus mátrix):\
@@ -119,10 +119,10 @@ Szerver:
 ```
 1
 4
-0 0 1
-10 10 1
-0 10 1
-10 0 1
+1
+1
+2
+2
 0 14 10 10
 14 0 10 10
 10 10 0 14
@@ -138,6 +138,13 @@ Szerver (tick 0)
 2 -1 100
 3 -1 100
 0
+```
+
+Bot (tick 0)
+
+```
+1
+0 2 50
 ```
 
 ## A megjelenítő

@@ -65,7 +65,7 @@ Game data (Input only):
 `P` : (2 ≤ _P_ ≤ 50) integer, this is the number of planets
 
 For each planet (_P_ lines):\
-`production`: (1 ≤ _production_ ≤ 10) integer, production of the planet\
+`production`: (1 ≤ _production_ ≤ 10) integer, number of units produced by the planet each turn\
 The planets are numbered from _0_ to _P-1_ (later planetID), line _i_ contains the data of the planet _i_.
 
 For each pair of planets (symmetric matrix of size _P\*P_):\
@@ -119,10 +119,10 @@ Server:
 ```
 1
 4
-0 0 1
-10 10 1
-0 10 1
-10 0 1
+1
+1
+2
+2
 0 14 10 10
 14 0 10 10
 10 10 0 14
@@ -138,6 +138,13 @@ Server (tick 0)
 2 -1 100
 3 -1 100
 0
+```
+
+Bot (tick 0)
+
+```
+1
+0 2 50
 ```
 
 ## The visualizer
