@@ -80,8 +80,14 @@ export class Bot {
       throw new BotError(this.bot, "Send failed, already in error state: " + this.error.message);
 
     return new Promise<void>((resolve, reject) => {
+      let writeTimeout: NodeJS.Timeout;
       try {
+        writeTimeout = setTimeout(() => {
+          this.setBotError(new BotError(this.bot, "Send timeout. Buffer filled?"));
+          reject(this.error);
+        }, 1000);
         this.stdin.write(message + "\n", (error) => {
+          clearTimeout(writeTimeout);
           if (error) {
             this.setBotError(new BotError(this.bot, "write error: " + error.message));
             reject(this.error);
@@ -90,16 +96,7 @@ export class Bot {
           }
         });
       } catch (error) {
-        this.setBotError(
-          new BotError(
-            {
-              id: this.id,
-              name: this.name,
-              index: this.index,
-            },
-            "write error: " + error.message,
-          ),
-        );
+        this.setBotError(new BotError(this.bot, "write error: " + error.message));
         reject(this.error);
       }
     });

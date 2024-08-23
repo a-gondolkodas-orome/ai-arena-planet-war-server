@@ -2,21 +2,12 @@
 
 using namespace std;
 
-int my_player_id;
-int P;
-
 struct Planet {
   int id;
   int production;
   int player_id;
   int population;
 };
-
-vector<Planet> planets;
-vector<vector<int>> dist;
-
-int tick;
-int T;
 
 struct Troop {
   int player_id;
@@ -25,7 +16,54 @@ struct Troop {
   int arrive;
 };
 
+struct SendTroop {
+  int from, to;
+  int count;
+};
+
+int my_player_id;
+int P; // planet count
+int tick;
+int T; // tick count
+vector<Planet> planets;
+vector<vector<int>> dist;
 vector<Troop> troops;
+vector<SendTroop> send_troops;
+
+void initialize();
+bool read_tick();
+
+int main() {
+  string greeting;
+  cin >> greeting;
+  cout << "OK" << endl;
+
+  initialize();
+  while (read_tick()) {
+    send_troops.clear();
+    int p1, p2;
+    for (p1 = 0; p1 < planets.size(); p1++) {
+      if (planets[p1].player_id == my_player_id && planets[p1].population >= 30)
+        break;
+    }
+    for (p2 = 0; p2 < planets.size(); p2++) {
+      if (planets[p2].player_id != my_player_id)
+        break;
+    }
+    if (p1 < planets.size() && p2 < planets.size()) {
+      int unit_count = 10;
+      send_troops.push_back({planets[p1].id, planets[p2].id, unit_count});
+      cerr << "Attacking " << planets[p2].id << " from " << planets[p1].id << " with " << unit_count << " units\n";
+    }
+
+    cout << send_troops.size() << endl;
+    for (const SendTroop &t : send_troops) {
+      cout << t.from << ' ' << t.to << ' ' << t.count << endl;
+    }
+  }
+}
+
+// ====================== GAME SERVER COMMUNICATION -- MODIFY AT YOUR OWN RISK ======================
 
 /** read and store initial parameters */
 void initialize() {
@@ -67,41 +105,4 @@ bool read_tick() {
   }
 
   return true;
-}
-
-struct SendTroop {
-  int from, to;
-  int count;
-};
-
-vector<SendTroop> send_troops;
-
-int main() {
-  string greeting;
-  cin >> greeting;
-  cout << "OK" << endl;
-
-  initialize();
-  while (read_tick()) {
-    send_troops.clear();
-    for (Planet &planet : planets) {
-      if (planet.player_id != my_player_id || planet.population < 30)
-        continue;
-      int attack_planet = -1;
-      for (int p2 = 0; p2 < planets.size(); p2++) {
-        if (planets[p2].player_id != my_player_id)
-          attack_planet = p2;
-      }
-      if (attack_planet != -1) {
-        int unit_count = 10;
-        send_troops.push_back({planet.id, attack_planet, unit_count});
-        planet.population -= unit_count;
-      }
-    }
-
-    cout << send_troops.size() << endl;
-    for (const SendTroop &t : send_troops) {
-      cout << t.from << ' ' << t.to << ' ' << t.count << endl;
-    }
-  }
 }

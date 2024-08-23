@@ -18,6 +18,7 @@ const BOT_LOG__MAX_LENGTH = 2000;
 let troopIDCounter = 0;
 const matchLog: TickVisualizer[] = [];
 let botCommLog: TickCommLog[] = [];
+
 function resetBotCommLog(length: number) {
   botCommLog = [];
   for (let i = 0; i < length; ++i) botCommLog.push({ received: [], sent: [] });
@@ -45,7 +46,11 @@ async function makeMatch(state: GameState, botPool: BotPool) {
   resetBotCommLog(botPool.bots.length);
   const workingBots = await testingBots(state, botPool);
   for (let i = 0; i < workingBots.length; i++) {
-    await sendMessage(workingBots[i], startingPosToString(state, i));
+    try {
+      await sendMessage(workingBots[i], startingPosToString(state, i));
+    } catch (error) {
+      console.log("Sending init message failed", error);
+    }
   }
   let gameOver = false;
   tickToVisualizer(botPool, state); // Save for visualizer
@@ -64,18 +69,25 @@ async function makeMatch(state: GameState, botPool: BotPool) {
         userSteps.push([]);
         continue;
       }
-      await sendMessage(workingBots[i], tickToString(state));
+      try {
+        await sendMessage(workingBots[i], tickToString(state));
+      } catch (error) {
+        // Not all errors come as exceptions, logging any problems together at the next step
+        // console.log("Sending tick failed", error);
+      }
       if (workingBots[i].error) {
         console.log(`${formatTime()}: ${workingBots[i].id} (#${workingBots[i].index}) send failed`);
+        userSteps.push([]);
+      } else {
+        userSteps.push(await getUserSteps(workingBots[i], state, i));
+        let botLog = workingBots[i].std_err.join("\n");
+        workingBots[i].std_err = [];
+        if (botLog.length > BOT_LOG__MAX_LENGTH) {
+          botLog = botLog.substring(0, BOT_LOG__MAX_LENGTH) + "...\n[[bot log trimmed to 2KB]]";
+        }
+        const commLog = botCommLog[workingBots[i].index];
+        commLog.botLog = botLog || undefined;
       }
-      userSteps.push(await getUserSteps(workingBots[i], state, i));
-      let botLog = workingBots[i].std_err.join("\n");
-      workingBots[i].std_err = [];
-      if (botLog.length > BOT_LOG__MAX_LENGTH) {
-        botLog = botLog.substring(0, BOT_LOG__MAX_LENGTH) + "...\n[[bot log trimmed to 2KB]]";
-      }
-      const commLog = botCommLog[workingBots[i].index];
-      commLog.botLog = botLog || undefined;
     }
     state = updateState(state, userSteps);
     tickToVisualizer(botPool, state); // Save for visualizer
@@ -86,6 +98,11 @@ async function makeMatch(state: GameState, botPool: BotPool) {
         .filter((id): id is number => id !== undefined),
       ...state.tick.troops.map((troop) => troop.player),
     ]);
+    for (const bot of workingBots) {
+      if (bot.error) {
+        playersAlive.delete(bot.index);
+      }
+    }
     if (playersAlive.size < 2) gameOver = true;
   }
 
@@ -440,6 +457,11 @@ function stateToVisualizer(botPool: BotPool, state: GameState): void {
   for (const troop of lastTick.troops) {
     const playerId = botPool.bots[troop.player].id;
     score.set(playerId, notNull(score.get(playerId)) + troop.size);
+  }
+  for (const bot of botPool.bots) {
+    if (bot.error) {
+      score.set(bot.id, 0);
+    }
   }
   fs.writeFileSync(
     "score.json",
