@@ -1,14 +1,16 @@
-
 {
-    "compilerOptions": {
-      "module": "ESNext",
-      "noImplicitAny": true,
-      "preserveConstEnums": true,
-      "removeComments": true,
-      "outDir": "./dist",
-      "rootDir": "./",
-      "sourceMap": true,
-      "target": "ESNext",
-      "moduleResolution": "node"
-    }
-  }
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "preserveConstEnums": true,
+    "removeComments": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "target": "ES6",
+    "moduleResolution": "node",
+    "lib": ["ES2021"]
+  },
+  "include": ["src"]
+}

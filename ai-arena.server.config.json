@@ -1,0 +1,5 @@
+{
+  "build": "npm install --include=dev && npm run build && rm -rf node_modules && npm install && mv node_modules dist/node_modules",
+  "programPath": "dist",
+  "run": "node %program/nanowar.js"
+}

@@ -1,0 +1,15 @@
+{
+  "map": "maps/face-to-face.json",
+  "bots": [
+    {
+      "id": "abcd1234",
+      "name": "bot1",
+      "runCommand": "bots/win_bot.out"
+    },
+    {
+      "id": "1234abcd",
+      "name": "bot2",
+      "runCommand": "bots/idle_bot.out"
+    }
+  ]
+}
